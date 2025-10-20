@@ -85,3 +85,4 @@ export function preloadCriticalImages(products: any[]): void {
     console.warn('Some critical images failed to preload')
   })
 }
+

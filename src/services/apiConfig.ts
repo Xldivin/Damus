@@ -3,7 +3,7 @@
 
 export const API_CONFIG = {
   // Base URL for all API calls
-  baseURL: 'http://localhost:8000',
+  baseURL: 'https://api.seba.hanohost.net',
   
   // Default headers for all requests
   headers: {
@@ -14,7 +14,7 @@ export const API_CONFIG = {
   },
   
   // Request timeout in milliseconds
-  timeout: 5000,
+  timeout: 10000,
   
   // Whether to send cookies with cross-site requests (needed for session-based wishlists)
   credentials: 'include' as RequestCredentials,

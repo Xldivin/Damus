@@ -16,6 +16,7 @@ import { LoginPage } from './components/pages/LoginPage'
 import { SignupPage } from './components/pages/SignupPage'
 import { Toaster } from './components/ui/sonner'
 import { AppContext, AppContextType, CartItem } from './context/AppContext'
+import './utils/apiTest' // Auto-run API test
 
 // Mock data for products
 export const mockProducts = [
