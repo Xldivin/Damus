@@ -37,7 +37,7 @@ export function CheckoutPage() {
     city: '',
     state: '',
     zipCode: '',
-    country: 'United States'
+    country: 'United Arab Emirates'
   })
   
   const [billingInfo, setBillingInfo] = useState({
@@ -49,7 +49,7 @@ export function CheckoutPage() {
     city: '',
     state: '',
     zipCode: '',
-    country: 'United States'
+    country: 'United Arab Emirates'
   })
   
   const [paymentInfo, setPaymentInfo] = useState({
@@ -98,7 +98,7 @@ export function CheckoutPage() {
     public_key: flutterwavePublicKey,
     tx_ref: `tx-${Date.now()}`,
     amount: total,
-    currency: "USD",
+    currency: "AED",
     payment_options: "card,ussd,banktransfer,mobilemoneyrw,mobilemoneygh,mobilemoneyuganda,mobilemoneyzambia",
     customer: {
       email: shippingInfo.email,
@@ -373,20 +373,20 @@ export function CheckoutPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Items ({cartItems.reduce((sum, item) => sum + item.quantity, 0)})</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>AED {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`}</span>
+                  <span>{shippingCost === 0 ? 'FREE' : `AED ${shippingCost.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>AED {tax.toFixed(2)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>AED {total.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
@@ -542,16 +542,19 @@ export function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="state">State *</Label>
+                    <Label htmlFor="state">Emirate *</Label>
                     <Select value={shippingInfo.state} onValueChange={(value: string) => handleShippingInfoChange('state', value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select state" />
+                        <SelectValue placeholder="Select emirate" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="CA">California</SelectItem>
-                        <SelectItem value="NY">New York</SelectItem>
-                        <SelectItem value="TX">Texas</SelectItem>
-                        <SelectItem value="FL">Florida</SelectItem>
+                        <SelectItem value="Abu Dhabi">Abu Dhabi</SelectItem>
+                        <SelectItem value="Dubai">Dubai</SelectItem>
+                        <SelectItem value="Sharjah">Sharjah</SelectItem>
+                        <SelectItem value="Ajman">Ajman</SelectItem>
+                        <SelectItem value="Umm Al Quwain">Umm Al Quwain</SelectItem>
+                        <SelectItem value="Ras Al Khaimah">Ras Al Khaimah</SelectItem>
+                        <SelectItem value="Fujairah">Fujairah</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -571,8 +574,7 @@ export function CheckoutPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="United States">United States</SelectItem>
-                        <SelectItem value="Canada">Canada</SelectItem>
+                        <SelectItem value="United Arab Emirates">United Arab Emirates</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -600,7 +602,7 @@ export function CheckoutPage() {
                         <p className="text-gray-600 text-sm">{option.time}</p>
                       </div>
                       <div className="font-semibold">
-                        {option.cost === 0 ? 'FREE' : `$${option.cost}`}
+                        {option.cost === 0 ? 'FREE' : `AED ${option.cost}`}
                       </div>
                     </div>
                   ))}
@@ -645,7 +647,7 @@ export function CheckoutPage() {
                           ) : (
                             <CreditCard className="h-4 w-4 mr-2" />
                           )}
-                          {isProcessingPayment ? 'Processing...' : `Pay - $${total.toFixed(2)}`}
+                          {isProcessingPayment ? 'Processing...' : `Pay - AED ${total.toFixed(2)}`}
                         </Button>
                       </div>
                       <div className="text-xs text-gray-600 text-center">
@@ -671,7 +673,7 @@ export function CheckoutPage() {
                           ) : (
                             <Smartphone className="h-4 w-4 mr-2" />
                           )}
-                          {isProcessingPayment ? 'Processing...' : `Pay with Mobile Money - $${total.toFixed(2)}`}
+                          {isProcessingPayment ? 'Processing...' : `Pay with Mobile Money - AED ${total.toFixed(2)}`}
                         </Button>
                       </div>
                       <div className="text-xs text-gray-600 text-center">
@@ -697,7 +699,7 @@ export function CheckoutPage() {
                           ) : (
                             <Building2 className="h-4 w-4 mr-2" />
                           )}
-                          {isProcessingPayment ? 'Processing...' : `Pay with Bank Transfer - $${total.toFixed(2)}`}
+                          {isProcessingPayment ? 'Processing...' : `Pay with Bank Transfer - AED ${total.toFixed(2)}`}
                         </Button>
                       </div>
                       <div className="text-xs text-gray-600 text-center">
@@ -768,7 +770,7 @@ export function CheckoutPage() {
                 ) : (
                 <Lock className="h-4 w-4 mr-2" />
                 )}
-                {isProcessingPayment ? 'Processing Payment...' : `Pay - $${total.toFixed(2)}`}
+                {isProcessingPayment ? 'Processing Payment...' : `Pay - AED ${total.toFixed(2)}`}
               </Button>
             )}
           </div>
@@ -795,7 +797,7 @@ export function CheckoutPage() {
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{item.product.name}</h4>
                       <p className="text-gray-600 text-sm">Qty: {item.quantity}</p>
-                      <p className="font-semibold text-sm">${((item.product?.effective_price || item.product?.price || 0) * item.quantity).toFixed(2)}</p>
+                      <p className="font-semibold text-sm">AED {((item.product?.effective_price || item.product?.price || 0) * item.quantity).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
@@ -806,20 +808,20 @@ export function CheckoutPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>AED {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`}</span>
+                  <span>{shippingCost === 0 ? 'FREE' : `AED ${shippingCost.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>AED {tax.toFixed(2)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>AED {total.toFixed(2)}</span>
                 </div>
               </div>
               

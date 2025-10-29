@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Search, Filter, Grid, List, Star, ChevronDown } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
@@ -10,6 +10,7 @@ import { Slider } from '../ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 // removed popover in favor of simple toggle panels
 import { ImageWithFallback } from '../figma/ImageWithFallback'
+import { QuickAdd } from '../QuickAdd'
 import { toast } from 'sonner'
 import { useAppContext } from '../../context/AppContext'
 import { apiService } from '../../services/api'
@@ -37,6 +38,7 @@ export function ProductListingPage() {
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const location = useLocation()
 
   // Load data from API
   useEffect(() => {
@@ -78,6 +80,17 @@ export function ProductListingPage() {
 
     loadData()
   }, [])
+
+  // Apply category filter from query string on navigation
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search)
+      const category = params.get('category')
+      if (category) {
+        setSelectedCategories([category])
+      }
+    } catch {}
+  }, [location.search])
 
   const filteredProducts = products.filter(product => {
     const matchesPrice = product.effective_price >= priceRange[0] && product.effective_price <= priceRange[1]
@@ -203,8 +216,8 @@ export function ProductListingPage() {
             className="w-full"
           />
           <div className="flex justify-between text-sm text-gray-600 mt-2">
-            <span>{'$'}{priceRange[0]}</span>
-            <span>{'$'}{priceRange[1]}</span>
+            <span>AED {priceRange[0]}</span>
+            <span>AED {priceRange[1]}</span>
           </div>
         </div>
       </div>
@@ -379,8 +392,8 @@ export function ProductListingPage() {
               <h4 className="font-medium mb-3">Price Range</h4>
               <Slider value={priceRange} onValueChange={setPriceRange} max={3000} step={50} className="w-full" />
               <div className="flex justify-between text-sm text-gray-600 mt-2">
-                <span>{'$'}{priceRange[0]}</span>
-                <span>{'$'}{priceRange[1]}</span>
+                <span>AED {priceRange[0]}</span>
+                <span>AED {priceRange[1]}</span>
               </div>
             </div>
           )}
@@ -474,25 +487,25 @@ export function ProductListingPage() {
           </div>
         ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {sortedProducts.map((product) => (
+              {sortedProducts.map((product, index) => (
                 <Card 
-                  key={product.id} 
-                  className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200"
+                  key={`product-${product.id || index}`} 
+                  className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200 relative"
                 >
                   <CardContent className="p-0">
-                    <div className="aspect-square overflow-hidden rounded-t-lg relative">
+                    <div className="h-80 overflow-hidden rounded-t-lg relative">
                       <ImageWithFallback
                         src={product.primary_image}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         width={400}
-                        height={400}
+                        height={320}
                         quality={85}
                         lazy={true}
                       />
                       {product.originalPrice && (
                         <Badge className="absolute top-2 left-2 bg-black text-white">
-                          {'$'}{product.original_price - product.effective_price} OFF
+                          AED {product.original_price - product.effective_price} OFF
                         </Badge>
                       )}
                       {!product.in_stock && (
@@ -513,39 +526,44 @@ export function ProductListingPage() {
                         </svg>
                       </button>
                     </div>
-                    <div className="p-4" onClick={() => handleProductClick(product)}>
-                      <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p>
-                      <h3 className="font-semibold mb-2" >
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center mb-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${i < Math.floor(product.average_rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                            />
-                          ))}
+                    <div className="p-4">
+                      <div onClick={() => handleProductClick(product)} className="cursor-pointer">
+                        <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p>
+                        <h3 className="font-semibold mb-2">
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center mb-2">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${i < Math.floor(product.average_rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600 ml-2">
+                            ({product.total_reviews})
+                          </span>
                         </div>
-                        <span className="text-sm text-gray-600 ml-2">
-                          ({product.total_reviews})
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-lg">{'$'}{product.effective_price}</span>
-                          {product.original_price && (
-                            <span className="text-gray-500 line-through text-sm">{'$'}{product.original_price}</span>
-                          )}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-lg">AED {product.effective_price}</span>
+                            {product.original_price && (
+                              <span className="text-gray-500 line-through text-sm">AED {product.original_price}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <Button 
-                        className="w-full bg-black text-white hover:bg-gray-800"
-                        disabled={!product.in_stock}
-                        onClick={(e:any) => handleAddToCartApi(e, product)}
-                      >
-                        {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
-                      </Button>
+                      
+                      {/* Quick Add Component - Show on hover */}
+                      <div className="mt-4 border-t pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <QuickAdd 
+                          product={product}
+                          onAddToCart={(product, size) => {
+                            console.log(`Added ${product.name} in size ${size} to cart`)
+                          }}
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -553,9 +571,9 @@ export function ProductListingPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {sortedProducts.map((product) => (
+              {sortedProducts.map((product, index) => (
                 <Card 
-                  key={product.id} 
+                  key={`product-list-${product.id || index}`} 
                   className="cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200"
                   onClick={() => handleProductClick(product)}
                 >
@@ -568,8 +586,8 @@ export function ProductListingPage() {
                           className="w-full h-full object-cover"
                         />
                         {product.originalPrice && (
-                          <Badge className="absolute top-2 left-2 bg-black text-white">
-                            {'$'}{product.original_price - product.effective_price} OFF
+                        <Badge className="absolute top-2 left-2 bg-black text-white">
+                          AED {product.original_price - product.effective_price} OFF
                           </Badge>
                         )}
                       </div>
@@ -595,9 +613,9 @@ export function ProductListingPage() {
                             </div>
                             <p className="text-gray-600 mb-4">{product.description}</p>
                             <div className="flex items-center space-x-2 mb-4">
-                              <span className="font-bold text-2xl">{'$'}{product.effective_price}</span>
+                              <span className="font-bold text-2xl">AED {product.effective_price}</span>
                               {product.original_price && (
-                                <span className="text-gray-500 line-through text-lg">{'$'}{product.original_price}</span>
+                                <span className="text-gray-500 line-through text-lg">AED {product.original_price}</span>
                               )}
                             </div>
                           </div>

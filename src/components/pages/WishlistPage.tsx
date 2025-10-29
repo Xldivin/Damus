@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Heart, ShoppingCart, Share2, Trash2, Grid, List, Star } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
@@ -16,7 +16,8 @@ export function WishlistPage() {
     toggleWishlist, 
     addToCart, 
     setSelectedProduct,
-    isLoggedIn 
+    isLoggedIn,
+    replaceWishlistFromServer,
   } = useAppContext()
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -24,6 +25,7 @@ export function WishlistPage() {
   const [wishlistCount, setWishlistCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const location = useLocation()
 
   useEffect(() => {
     const loadWishlist = async () => {
@@ -49,6 +51,11 @@ export function WishlistPage() {
         }))
         setWishlistProducts(products)
         setWishlistCount(resp.item_count ?? products.length)
+        // Sync global wishlist IDs for consistent header count
+        if (replaceWishlistFromServer) {
+          const ids = products.map((p: any) => String(p.id))
+          replaceWishlistFromServer(ids)
+        }
       } catch (err: any) {
         console.error('Failed to load wishlist:', err)
         setError('Failed to load wishlist')
@@ -57,7 +64,7 @@ export function WishlistPage() {
       }
     }
     loadWishlist()
-  }, [])
+  }, [isLoggedIn, location.key])
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product)
@@ -191,7 +198,7 @@ export function WishlistPage() {
                       />
                       {product.original_price && (
                         <Badge className="absolute top-2 left-2 bg-black text-white">
-                          {'$'}{(product.original_price as number) - (product.effective_price as number)} OFF
+                          AED {(product.original_price as number) - (product.effective_price as number)} OFF
                         </Badge>
                       )}
                       {!product.in_stock && (
@@ -213,7 +220,7 @@ export function WishlistPage() {
                       {product.originalPrice && (
                         <div className="absolute bottom-2 left-2 right-2">
                           <div className="bg-green-500 text-white text-xs px-2 py-1 rounded">
-                            Price dropped by ${product.originalPrice - product.price}!
+                            Price dropped by AED {product.originalPrice - product.price}!
                           </div>
                         </div>
                       )}
@@ -235,10 +242,10 @@ export function WishlistPage() {
                       </div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <span className="font-bold text-lg">{'$'}{product.effective_price}</span>
+                          <span className="font-bold text-lg">AED {product.effective_price}</span>
                           {product.original_price && (
                             <span className="text-gray-500 line-through text-sm">
-                              {'$'}{product.original_price}
+                              AED {product.original_price}
                             </span>
                           )}
                         </div>
@@ -320,15 +327,15 @@ export function WishlistPage() {
                             </div>
                             <p className="text-gray-600 text-sm mb-3">{product.description}</p>
                             <div className="flex items-center space-x-2">
-                              <span className="font-bold text-xl">{'$'}{product.effective_price}</span>
+                              <span className="font-bold text-xl">AED {product.effective_price}</span>
                               {product.original_price && (
                                 <>
                                   <span className="text-gray-500 line-through">
-                                    {'$'}{product.original_price}
+                                    AED {product.original_price}
                                   </span>
                                   {product.original_price && (
                                     <span className="text-green-600 text-sm font-medium">
-                                      Save {'$'}{(product.original_price as number) - (product.effective_price as number)}
+                                      Save AED {(product.original_price as number) - (product.effective_price as number)}
                                     </span>
                                   )}
                                 </>

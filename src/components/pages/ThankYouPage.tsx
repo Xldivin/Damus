@@ -28,7 +28,7 @@ export function ThankYouPage() {
             {orderData?.total && (
               <div className="flex justify-between">
                 <span>Order Total</span>
-                <span className="font-medium">${Number(orderData.total).toFixed(2)}</span>
+                <span className="font-medium">AED {Number(orderData.total).toFixed(2)}</span>
               </div>
             )}
             {orderData?.payment_method && (
@@ -49,6 +49,7 @@ export function ThankYouPage() {
     </div>
   )
 }
+
 
 
 

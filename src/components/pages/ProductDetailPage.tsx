@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Star, Heart, Share2, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -21,8 +21,15 @@ export function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
+  const [selectedSize, setSelectedSize] = useState<string>('')
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [inWishlist, setInWishlist] = useState<boolean>(false)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [reviewStats, setReviewStats] = useState<{ average_rating: number; total_reviews: number }>({ average_rating: 0, total_reviews: 0 })
+  const [isReviewOpen, setIsReviewOpen] = useState(false)
+  const [reviewForm, setReviewForm] = useState<{ rating: number; title: string; content: string }>({ rating: 5, title: '', content: '' })
+  const [reviewErrors, setReviewErrors] = useState<{ rating?: string; title?: string; content?: string }>({})
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
 
   // Load product data from API
   useEffect(() => {
@@ -47,6 +54,13 @@ export function ProductDetailPage() {
         // Load related products
         const related = await apiService.products.getRelatedProducts(id)
         setRelatedProducts(related)
+
+        // Load reviews
+        try {
+          const resp = await apiService.reviews.list(productData.id)
+          setReviews(resp.items || [])
+          setReviewStats({ average_rating: resp.average_rating || 0, total_reviews: resp.total_reviews || 0 })
+        } catch {}
       } catch (err) {
         console.error('Failed to load product:', err)
         setError('Failed to load product. Please try again.')
@@ -100,12 +114,12 @@ export function ProductDetailPage() {
   const handleAddToCart = async () => {
     try {
       if (isLoggedIn) {
-        await apiService.cart.addAuth({ product_id: product.id, quantity })
+        await apiService.cart.addAuth({ product_id: product.id, quantity, size: selectedSize })
       } else {
-        await apiService.cart.add({ product_id: product.id, quantity })
+        await apiService.cart.add({ product_id: product.id, quantity, size: selectedSize })
       }
-      addToCart(product, quantity)
-      toast.success(`Added ${quantity} ${product.name} to cart`)
+      addToCart({ ...product, selectedSize }, quantity)
+      toast.success(`Added ${quantity} ${product.name}${selectedSize ? ` (${selectedSize})` : ''} to cart`)
     } catch (e) {
       toast.error('Failed to add to cart')
     }
@@ -138,32 +152,45 @@ export function ProductDetailPage() {
     }
   }
 
-  const reviews = [
-    {
-      id: 1,
-      name: 'John Smith',
-      rating: 5,
-      date: '2024-01-15',
-      content: 'Excellent product! Works exactly as described and arrived quickly.',
-      verified: true
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      rating: 4,
-      date: '2024-01-10',
-      content: 'Good quality but could be improved in some areas. Overall satisfied.',
-      verified: true
-    },
-    {
-      id: 3,
-      name: 'Mike Chen',
-      rating: 5,
-      date: '2024-01-05',
-      content: 'Amazing build quality and performance. Highly recommend!',
-      verified: false
+  const validateReviewForm = (): boolean => {
+    const errors: { rating?: string; title?: string; content?: string } = {}
+    if (!reviewForm.rating || reviewForm.rating < 1 || reviewForm.rating > 5) {
+      errors.rating = 'Rating must be between 1 and 5.'
     }
-  ]
+    if (reviewForm.title && reviewForm.title.length > 255) {
+      errors.title = 'Title cannot exceed 255 characters.'
+    }
+    if (!reviewForm.content || !reviewForm.content.trim()) {
+      errors.content = 'Review content is required.'
+    }
+    setReviewErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const submitReview = async () => {
+    if (!product) return
+    if (!validateReviewForm()) return
+    try {
+      setIsSubmittingReview(true)
+      const resp = await apiService.reviews.create(product.id, {
+        rating: reviewForm.rating,
+        title: reviewForm.title,
+        content: reviewForm.content,
+      })
+      setIsReviewOpen(false)
+      setReviewForm({ rating: 5, title: '', content: '' })
+      setReviewErrors({})
+      // Refresh reviews
+      const list = await apiService.reviews.list(product.id)
+      setReviews(list.items || [])
+      setReviewStats({ average_rating: list.average_rating || 0, total_reviews: list.total_reviews || 0 })
+      toast.success('Review submitted')
+    } catch (e) {
+      toast.error('Failed to submit review')
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
 
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1)
@@ -213,7 +240,7 @@ export function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         {/* Product Images */}
         <div className="space-y-4">
-          <div className="aspect-square overflow-hidden rounded-lg border relative">
+          <div className="overflow-hidden rounded-lg border relative">
             <ImageWithFallback
               src={product.images?.[selectedImageIndex]?.image_url || product.primary_image}
               alt={product.name}
@@ -289,14 +316,14 @@ export function ProductDetailPage() {
           {/* Price */}
           <div className="space-y-2">
             <div className="flex items-center space-x-3">
-              <span className="text-3xl font-bold">${product.effective_price}</span>
+              <span className="text-3xl font-bold">AED {product.effective_price}</span>
               {product.original_price && (
                 <>
                   <span className="text-xl text-gray-500 line-through">
-                    ${product.original_price}
+                    AED {product.original_price}
                   </span>
                   <Badge className="bg-red-100 text-red-800">
-                    Save ${product.original_price - product.effective_price}
+                    Save AED {product.original_price - product.effective_price}
                   </Badge>
                 </>
               )}
@@ -315,6 +342,47 @@ export function ProductDetailPage() {
               {product.in_stock ? 'In Stock' : 'Out of Stock'}
             </span>
           </div>
+
+          {/* Size Selection - Only show if product has sizes */}
+          {(product.sizes || product.c_sizes || product.available_sizes) && (
+            <div className="space-y-3">
+              <div className="text-sm font-medium text-gray-700 uppercase tracking-wide">
+                Select Size
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {(product.sizes || product.c_sizes || product.available_sizes).map((size: any, index: number) => {
+                  const sizeValue = typeof size === 'string' ? size : size.name || size.value || size
+                  const isSelected = selectedSize === sizeValue
+                  // Check if size is available (for object format) or default to true for string format
+                  const isAvailable = typeof size === 'string' ? true : (size.available !== false)
+                  
+                  return (
+                    <button
+                      key={`size-${index}-${sizeValue}`}
+                      onClick={() => isAvailable && setSelectedSize(sizeValue)}
+                      disabled={!isAvailable}
+                      className={`
+                        px-4 py-3 text-sm font-medium rounded border transition-all relative
+                        ${isSelected 
+                          ? 'bg-black text-white border-black' 
+                          : isAvailable 
+                            ? 'bg-white text-gray-700 border-gray-300 hover:border-gray-400' 
+                            : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
+                        }
+                      `}
+                    >
+                      {sizeValue}
+                      {!isAvailable && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className="w-full h-px bg-gray-400"></span>
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           <p className="text-gray-700 leading-relaxed">
@@ -347,11 +415,11 @@ export function ProductDetailPage() {
               <Button
                 size="lg"
                 className="flex-1 bg-black text-white hover:bg-gray-800"
-                disabled={!product.in_stock}
+                disabled={!product.in_stock || (product.sizes || product.c_sizes || product.available_sizes ? !selectedSize : false)}
                 onClick={handleAddToCart}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />
-                Add to Cart
+                {(product.sizes || product.c_sizes || product.available_sizes) && !selectedSize ? 'Select Size' : 'Add to Cart'}
               </Button>
               <Button
                 size="lg"
@@ -375,7 +443,7 @@ export function ProductDetailPage() {
               <Truck className="h-5 w-5 text-gray-600" />
               <div>
                 <p className="font-medium text-sm">Free Shipping</p>
-                <p className="text-xs text-gray-600">On orders over $50</p>
+                <p className="text-xs text-gray-600">On orders over AED 50</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -397,10 +465,10 @@ export function ProductDetailPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="specifications" className="mb-16">
+          <Tabs defaultValue="reviews" className="mb-16">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="specifications">Specifications</TabsTrigger>
-          <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
           <TabsTrigger value="shipping">Shipping & Returns</TabsTrigger>
         </TabsList>
         
@@ -429,19 +497,21 @@ export function ProductDetailPage() {
                 <h3 className="font-semibold" >
                   Customer Reviews
                 </h3>
-                <Button variant="outline" className="border-black text-black hover:bg-black hover:text-white">
-                  Write a Review
-                </Button>
+                {isLoggedIn && (
+                  <Button variant="outline" className="border-black text-black hover:bg-black hover:text-white" onClick={() => setIsReviewOpen(true)}>
+                    Write a Review
+                  </Button>
+                )}
               </div>
               
               <div className="space-y-6">
-                {reviews.map(review => (
-                  <div key={review.id} className="border-b border-gray-100 pb-6 last:border-b-0">
+                {reviews.map((rev: any) => (
+                  <div key={rev.id} className="border-b border-gray-100 pb-6 last:border-b-0">
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-medium">{review.name}</span>
-                          {review.verified && (
+                          <span className="font-medium">{rev.user?.name || 'Anonymous'}</span>
+                          {rev.is_verified && (
                             <Badge variant="secondary" className="text-xs">
                               Verified Purchase
                             </Badge>
@@ -452,15 +522,16 @@ export function ProductDetailPage() {
                             {[...Array(5)].map((_, i) => (
                               <Star
                                 key={i}
-                                className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                                className={`h-4 w-4 ${i < (rev.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
                               />
                             ))}
                           </div>
-                          <span className="text-sm text-gray-600">{review.date}</span>
+                          <span className="text-sm text-gray-600">{new Date(rev.created_at).toISOString().split('T')[0]}</span>
                         </div>
                       </div>
                     </div>
-                    <p className="text-gray-700">{review.content}</p>
+                    {rev.title && <div className="font-medium mb-1">{rev.title}</div>}
+                    <p className="text-gray-700">{rev.content}</p>
                   </div>
                 ))}
               </div>
@@ -516,7 +587,7 @@ export function ProductDetailPage() {
                 }}
               >
                 <CardContent className="p-0">
-                  <div className="aspect-square overflow-hidden rounded-t-lg relative">
+                  <div className="overflow-hidden rounded-t-lg relative">
                     <ImageWithFallback
                       src={relatedProduct.primary_image}
                       alt={relatedProduct.name}
@@ -528,7 +599,7 @@ export function ProductDetailPage() {
                       {relatedProduct.name}
                     </h3>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold">${relatedProduct.effective_price}</span>
+                      <span className="font-bold">AED {relatedProduct.effective_price}</span>
                       <div className="flex items-center">
                         <Star className="h-4 w-4 text-yellow-400 fill-current" />
                         <span className="text-sm text-gray-600 ml-1">
@@ -542,6 +613,57 @@ export function ProductDetailPage() {
             ))}
           </div>
         </section>
+      )}
+      {/* Write Review Modal */}
+      {isReviewOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-lg p-6">
+            <h3 className="text-xl font-semibold mb-4">Write a Review</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Rating</label>
+                <div className="flex items-center space-x-1">
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} onClick={() => setReviewForm(prev => ({ ...prev, rating: n }))}>
+                      <Star className={`h-5 w-5 ${n <= reviewForm.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                    </button>
+                  ))}
+                </div>
+                {reviewErrors.rating && (
+                  <div className="text-xs text-red-600 mt-1">{reviewErrors.rating}</div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Title (optional)</label>
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  value={reviewForm.title}
+                  onChange={(e) => setReviewForm(prev => ({ ...prev, title: e.target.value }))}
+                />
+                {reviewErrors.title && (
+                  <div className="text-xs text-red-600 mt-1">{reviewErrors.title}</div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Your Review</label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 h-28"
+                  value={reviewForm.content}
+                  onChange={(e) => setReviewForm(prev => ({ ...prev, content: e.target.value }))}
+                />
+                {reviewErrors.content && (
+                  <div className="text-xs text-red-600 mt-1">{reviewErrors.content}</div>
+                )}
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsReviewOpen(false)}>Cancel</Button>
+              <Button className="bg-black text-white hover:bg-gray-800" onClick={submitReview} disabled={isSubmittingReview}>
+                {isSubmittingReview ? 'Creating…' : 'Submit'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

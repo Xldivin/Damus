@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Search, ShoppingCart, Heart, User, Menu, X, Settings, LogOut, UserCircle, Shield } from 'lucide-react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -23,28 +23,48 @@ export function Header() {
     user,
     setUser,
     isAdmin,
-    setIsAdmin
+    setIsAdmin,
+    replaceCartFromServer,
+    replaceWishlistFromServer,
   } = useAppContext()
-  const [remoteWishlistCount, setRemoteWishlistCount] = useState<number | null>(null)
+  const location = useLocation()
 
+  // Keep counts consistent by syncing from server on auth or route changes
   useEffect(() => {
     let mounted = true
-    const loadWishlistCount = async () => {
+    const syncFromServer = async () => {
       try {
-        const resp = isLoggedIn
-          ? await apiService.wishlist.countAuth()
-          : await apiService.wishlist.count()
-        if (mounted) setRemoteWishlistCount(resp.count)
-      } catch (e) {
-        // swallow silently for header; optionally log
-      }
+        // Sync wishlist IDs to keep header count consistent
+        const wishlistResp = isLoggedIn
+          ? await apiService.wishlist.getAllAuth()
+          : await apiService.wishlist.getAll()
+        if (!mounted) return
+        const wishlistIds = (wishlistResp.items || [])
+          .map((entry: any) => String(entry.product?.id ?? entry.product_id))
+          .filter(Boolean)
+        if (replaceWishlistFromServer) replaceWishlistFromServer(wishlistIds)
+
+        // Sync cart items to keep cart count consistent
+        const cartResp = isLoggedIn
+          ? await apiService.cart.getAllAuth(user?.id)
+          : await apiService.cart.getAll()
+        if (!mounted) return
+        const mappedCart = (cartResp.items || []).map((it: any) => ({
+          productId: String(it.product?.id ?? it.product_id),
+          cartItemId: it.id,
+          product: {
+            ...(it.product ?? it),
+            selectedSize: it.product_options?.size,
+            selectedColor: it.product_options?.color,
+          },
+          quantity: Number(it.quantity ?? 1),
+        }))
+        if (replaceCartFromServer) replaceCartFromServer(mappedCart as any)
+      } catch {}
     }
-    loadWishlistCount()
-    // optionally poll, or listen to route changes
-    return () => {
-      mounted = false
-    }
-  }, [])
+    syncFromServer()
+    return () => { mounted = false }
+  }, [isLoggedIn, location.pathname])
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
@@ -98,11 +118,10 @@ export function Header() {
   }
 
   const navItems = [
-    { label: 'Electronics', action: () => navigate('/products') },
-    { label: 'Audio', action: () => navigate('/products') },
-    { label: 'Computers', action: () => navigate('/products') },
-    { label: 'Gaming', action: () => navigate('/products') },
-    { label: 'Deals', action: () => navigate('/products') }
+    { label: 'Clothes', action: () => navigate('/products?category=Clothes') },
+    { label: 'Shoes', action: () => navigate('/products?category=Shoes') },
+    { label: 'Sports & Fitness', action: () => navigate('/products?category=Sports%20%26%20Fitness') },
+    { label: 'Fashion & Textiles', action: () => navigate('/products?category=Fashion%20%26%20Textiles') },
   ]
 
   return (
@@ -142,9 +161,9 @@ export function Header() {
                 className="relative p-1.5 sm:p-2 text-gray-600 hover:text-black transition-colors"
               >
                 <Heart className="h-5 w-5 sm:h-6 sm:w-6" />
-                {(remoteWishlistCount ?? wishlistCount) > 0 && (
+                {wishlistCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 text-xs bg-black text-white">
-                    {remoteWishlistCount ?? wishlistCount}
+                    {wishlistCount}
                   </Badge>
                 )}
               </button>

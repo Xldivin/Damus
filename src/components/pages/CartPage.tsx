@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ShoppingCart, Minus, Plus, Trash2, Heart, ArrowLeft, CreditCard, Truck, Shield } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
@@ -19,6 +19,7 @@ export function CartPage() {
     toggleWishlist, 
     setSelectedProduct,
     isLoggedIn,
+    user,
     replaceCartFromServer,
   } = useAppContext()
   
@@ -27,6 +28,28 @@ export function CartPage() {
   const [estimatedDelivery, setEstimatedDelivery] = useState('3-5 business days')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const location = useLocation()
+
+  const refreshCartFromServer = async () => {
+    try {
+      const resp = isLoggedIn
+        ? await apiService.cart.getAllAuth(user?.id)
+        : await apiService.cart.getAll()
+      const mapped: any[] = (resp.items || []).map((it: any) => ({
+        productId: String(it.product?.id ?? it.product_id),
+        cartItemId: it.id,
+        product: {
+          ...(it.product ?? it),
+          selectedSize: it.product_options?.size,
+          selectedColor: it.product_options?.color,
+        },
+        quantity: Number(it.quantity ?? 1),
+      }))
+      if (replaceCartFromServer) replaceCartFromServer(mapped as any)
+    } catch (e) {
+      // ignore refresh errors here
+    }
+  }
 
   useEffect(() => {
     const loadCart = async () => {
@@ -34,12 +57,19 @@ export function CartPage() {
         setLoading(true)
         setError(null)
         const resp = isLoggedIn
-          ? await apiService.cart.getAllAuth()
+          ? await apiService.cart.getAllAuth(user?.id)
           : await apiService.cart.getAll()
-        // Map server items -> local CartItem shape { productId, product, quantity }
+        // Map server items -> local CartItem shape { productId, product, quantity, cartItemId }
         const mapped: any[] = (resp.items || []).map((it: any) => ({
           productId: String(it.product?.id ?? it.product_id),
-          product: it.product ?? it,
+          cartItemId: it.id, // Store the actual cart item ID for removal
+          product: {
+            ...(it.product ?? it),
+            // Add size from product_options if available
+            selectedSize: it.product_options?.size,
+            // Add other product options
+            selectedColor: it.product_options?.color,
+          },
           quantity: Number(it.quantity ?? 1),
         }))
         if (replaceCartFromServer) replaceCartFromServer(mapped as any)
@@ -50,7 +80,7 @@ export function CartPage() {
       }
     }
     loadCart()
-  }, [])
+  }, [isLoggedIn, user?.id, location.key])
 
   // Calculate totals (support API product shape)
   const subtotal = cartItems.reduce((sum, item) => {
@@ -71,19 +101,31 @@ export function CartPage() {
     }
   }
 
-  const handleRemoveItem = async (productId: string, productName: string) => {
+  const handleRemoveItem = async (cartItemId: string, productId: string, productName: string) => {
     try {
-      await apiService.cart.remove(productId)
+      // Use the cart item ID for API removal, with authenticated endpoint if logged in
+      if (isLoggedIn) {
+        await apiService.cart.removeAuth(cartItemId, user?.id)
+      } else {
+        await apiService.cart.remove(cartItemId)
+      }
     } catch (e) {
-      // ignore server error and still update UI to keep UX responsive
+      console.error('Failed to remove item from cart:', e)
+      toast.error('Failed to remove item from cart')
+      return
     }
+    // Update local state using product ID
     removeFromCart(productId)
+    // Ensure header/cart counts reflect server truth
+    refreshCartFromServer()
     toast.success(`${productName} removed from cart`)
   }
 
   const handleMoveToWishlist = (productId: string, productName: string) => {
     toggleWishlist(productId)
     removeFromCart(productId)
+    // Also refresh from server to avoid any drift
+    refreshCartFromServer()
     toast.success(`${productName} moved to wishlist`)
   }
 
@@ -176,29 +218,61 @@ export function CartPage() {
                         </h3>
                         <p className="text-gray-600 text-sm mb-2">{item.product?.brand?.name || item.product?.brand || ''}</p>
                         
-                        <div className="flex items-center space-x-4 mb-3">
-                          <div className="flex items-center border rounded-lg">
-                            <button
-                              onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
-                              className="p-2 hover:bg-gray-100 transition-colors"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </button>
-                            <span className="px-4 py-2 border-x min-w-[60px] text-center">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                              className="p-2 hover:bg-gray-100 transition-colors"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </button>
-                          </div>
+                        {/* Product Attributes */}
+                        <div className="space-y-1 mb-3">
+                          {/* Size */}
+                          {(item.product?.selectedSize || item.product?.size) && (
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Size:</span> {item.product?.selectedSize || item.product?.size}
+                            </div>
+                          )}
                           
-                          <div className="flex items-center space-x-2">
+                          {/* Color */}
+                          {(item.product?.color || item.product?.selectedColor) && (
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Color:</span> {item.product?.color || item.product?.selectedColor}
+                            </div>
+                          )}
+                          
+                          {/* Fit */}
+                          {item.product?.fit && (
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Fit:</span> {item.product.fit}
+                            </div>
+                          )}
+                          
+                          {/* Material */}
+                          {item.product?.material && (
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">Material:</span> {item.product.material}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center border rounded-lg">
+                              <button
+                                onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                                className="p-2 hover:bg-gray-100 transition-colors"
+                                disabled={item.quantity <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
+                              <span className="px-4 py-2 border-x min-w-[60px] text-center font-medium">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                                className="p-2 hover:bg-gray-100 transition-colors"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+                            
                             <button
-                              onClick={() => handleRemoveItem(item.productId, item.product.name)}
-                              className="flex items-center text-gray-600 hover:text-red-600 text-sm"
+                              onClick={() => handleRemoveItem((item as any).cartItemId || item.productId, item.productId, item.product.name)}
+                              className="flex items-center text-gray-600 hover:text-red-600 text-sm transition-colors"
                             >
                               <Trash2 className="h-4 w-4 mr-1" />
                               Remove
@@ -206,23 +280,26 @@ export function CartPage() {
                           </div>
                         </div>
                         
-                        <div className={`text-sm ${(item.product?.in_stock ?? item.product?.inStock) ? 'text-green-600' : 'text-red-600'}`}>
-                          {(item.product?.in_stock ?? item.product?.inStock) ? '✓ In stock' : '⚠ Out of stock'}
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className={`w-2 h-2 rounded-full ${(item.product?.in_stock ?? item.product?.inStock) ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <span className={`text-sm font-medium ${(item.product?.in_stock ?? item.product?.inStock) ? 'text-green-600' : 'text-red-600'}`}>
+                            {(item.product?.in_stock ?? item.product?.inStock) ? 'In stock' : 'Out of stock'}
+                          </span>
                         </div>
                       </div>
                       
                       <div className="text-right">
                         <div className="font-bold text-lg mb-1">
-                          ${(
+                          AED {(
                             Number(item.product?.effective_price ?? item.product?.price ?? 0) * item.quantity
                           ).toFixed(2)}
                         </div>
                         <div className="text-gray-600 text-sm">
-                          ${Number(item.product?.effective_price ?? item.product?.price ?? 0).toFixed(2)} each
+                          AED {Number(item.product?.effective_price ?? item.product?.price ?? 0).toFixed(2)} each
                         </div>
                         {item.product?.original_price && (
                           <div className="text-gray-500 line-through text-sm">
-                            ${(Number(item.product.original_price) * item.quantity).toFixed(2)}
+                            AED {(Number(item.product.original_price) * item.quantity).toFixed(2)}
                           </div>
                         )}
                       </div>
@@ -247,13 +324,13 @@ export function CartPage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span>Subtotal ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>AED {subtotal.toFixed(2)}</span>
                 </div>
                 
                 {appliedPromo === 'SAVE10' && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount (SAVE10)</span>
-                    <span>-${promoDiscount.toFixed(2)}</span>
+                    <span>-AED {promoDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 
@@ -263,21 +340,21 @@ export function CartPage() {
                     {shipping === 0 || appliedPromo === 'FREESHIP' ? (
                       <span className="text-green-600">FREE</span>
                     ) : (
-                      `$${shipping.toFixed(2)}`
+                      `AED ${shipping.toFixed(2)}`
                     )}
                   </span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>AED {tax.toFixed(2)}</span>
                 </div>
                 
                 <Separator />
                 
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>AED {total.toFixed(2)}</span>
                 </div>
               </div>
               
@@ -346,7 +423,7 @@ export function CartPage() {
           <Truck className="h-6 w-6 text-gray-600" />
           <div>
             <p className="font-medium">Free Shipping</p>
-            <p className="text-gray-600 text-sm">On orders over $50</p>
+            <p className="text-gray-600 text-sm">On orders over AED 50</p>
           </div>
         </div>
         <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">

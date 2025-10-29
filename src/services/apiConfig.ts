@@ -3,7 +3,7 @@
 
 export const API_CONFIG = {
   // Base URL for all API calls
-  baseURL: 'https://api.seba.hanohost.net',
+  baseURL: 'https://seba.hanohost.net/backend',
   
   // Default headers for all requests
   headers: {
@@ -33,6 +33,7 @@ export const API_CONFIG = {
     cartClear: '/api/cart/clear',
     authCartClear: '/api/auth/cart/clear',
     cartRemove: (id: string | number) => `/api/cart/remove/${id}`,
+    authCartRemove: (id: string | number) => `/api/auth/cart/remove/${id}`,
     wishlist: '/api/wishlist',
     wishlistAdd: '/api/wishlist/add',
     wishlistClear: '/api/wishlist/clear',

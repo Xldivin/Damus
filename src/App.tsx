@@ -164,6 +164,10 @@ export default function App() {
     )
   }
 
+  const replaceWishlistFromServer = (ids: string[]) => {
+    setWishlistItems(ids)
+  }
+
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
   const wishlistCount = wishlistItems.length
 
@@ -202,6 +206,7 @@ export default function App() {
     replaceCartFromServer,
     wishlistItems,
     toggleWishlist,
+    replaceWishlistFromServer,
     isLoggedIn,
     setIsLoggedIn,
     user,

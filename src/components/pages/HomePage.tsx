@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Truck, ShieldCheck, Headphones, RotateCcw } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { ImageWithFallback } from '../figma/ImageWithFallback'
+import { QuickAdd } from '../QuickAdd'
 import { useAppContext } from '../../context/AppContext'
 import { toast } from 'sonner'
 import { apiService } from '../../services/api'
@@ -263,52 +264,42 @@ export function HomePage() {
           </div>
         ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {bestSellers.map((product) => (
+          {bestSellers.map((product, index) => (
             <Card 
-              key={product.id} 
-              className="group hover:shadow-lg transition-all duration-300 border-black cursor-pointer"
-              onClick={() => handleProductClick(product)}
+              key={`homepage-product-${product.id || index}`} 
+              className="group hover:shadow-lg transition-all duration-300 border-black cursor-pointer relative"
             >
               <CardContent className="p-0">
-                 <div className="aspect-square overflow-hidden rounded-t-lg">
+                 <div className="h-80 overflow-hidden rounded-t-lg relative">
                    <ImageWithFallback
                        src={product.primary_image}
                      alt={product.name}
                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                      width={300}
-                     height={300}
+                     height={320}
                      quality={85}
                      lazy={true}
                    />
                  </div>
                 <div className="p-4">
-                  <h3 className="font-semibold mb-2">{product.name}</h3>
-                  <div className="flex items-center justify-between">
-                      <span className="font-bold text-lg">${product.effective_price}</span>
-                      {product.original_price && (
-                        <span className="text-gray-500 line-through text-sm">${product.original_price}</span>
-                    )}
+                  <div onClick={() => handleProductClick(product)} className="cursor-pointer">
+                    <h3 className="font-semibold mb-2">{product.name}</h3>
+                    <div className="flex items-center justify-between">
+                        <span className="font-bold text-lg">AED {product.effective_price}</span>
+                        {product.original_price && (
+                          <span className="text-gray-500 line-through text-sm">AED {product.original_price}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <Button 
-                      variant="outline"
-                      className="border-black text-black hover:bg-black hover:text-white"
-                      onClick={(e: { stopPropagation: () => void }) => {
-                        e.stopPropagation()
-                        handleProductClick(product)
+                  
+                  {/* Quick Add Component - Show on hover */}
+                  <div className="mt-4 border-t pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <QuickAdd 
+                      product={product}
+                      onAddToCart={(product, size) => {
+                        console.log(`Added ${product.name} in size ${size} to cart from homepage`)
                       }}
-                    >
-                      View Details
-                    </Button>
-                    <Button 
-                      className="bg-black text-white hover:bg-gray-800"
-                      onClick={(e: { stopPropagation: () => void }) => {
-                        e.stopPropagation()
-                        handleAddToCartApi(product)
-                      }}
-                    >
-                      Add to Cart
-                    </Button>
+                    />
                   </div>
                 </div>
               </CardContent>

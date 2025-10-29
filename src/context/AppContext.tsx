@@ -9,6 +9,7 @@ export interface AppContextType {
   replaceCartFromServer?: (items: CartItem[]) => void
   wishlistItems: string[]
   toggleWishlist: (productId: string) => void
+  replaceWishlistFromServer?: (ids: string[]) => void
   isLoggedIn: boolean
   setIsLoggedIn: (status: boolean) => void
   user: any
@@ -27,6 +28,7 @@ export interface AppContextType {
 
 export interface CartItem {
   productId: string
+  cartItemId?: string // The actual cart item ID from API for removal
   product: any
   quantity: number
 }

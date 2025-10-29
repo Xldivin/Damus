@@ -403,31 +403,51 @@ export const apiService = {
     },
   },
   cart: {
-    async add(params: { product_id: number | string; quantity: number; product_options?: Record<string, any> }): Promise<{ message: string }> {
+    async add(params: { product_id: number | string; quantity: number; size?: string; product_options?: Record<string, any> }): Promise<{ message: string }> {
       const baseHeaders = getApiHeaders()
       const hasToken = !!(typeof window !== 'undefined' && (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')))
       const headers = hasToken ? baseHeaders : { ...baseHeaders, 'X-Session-Id': getGuestSessionId() }
+      
+      // Include size in product_options if provided
+      const requestParams = {
+        ...params,
+        product_options: {
+          ...params.product_options,
+          ...(params.size && { size: params.size })
+        }
+      }
+      
       return apiRequest<{ message: string }>(API_CONFIG.endpoints.cartAdd, {
         method: 'POST',
         headers,
-        body: JSON.stringify(params),
+        body: JSON.stringify(requestParams),
       })
     },
-    async addAuth(params: { product_id: number | string; quantity: number; product_options?: Record<string, any> }): Promise<{ message: string }> {
+    async addAuth(params: { product_id: number | string; quantity: number; size?: string; product_options?: Record<string, any> }): Promise<{ message: string }> {
+      // Include size in product_options if provided
+      const requestParams = {
+        ...params,
+        product_options: {
+          ...params.product_options,
+          ...(params.size && { size: params.size })
+        }
+      }
+      
       return apiRequest<{ message: string }>(API_CONFIG.endpoints.authCartAdd, {
         method: 'POST',
         headers: getApiHeaders(),
-        body: JSON.stringify(params),
+        body: JSON.stringify(requestParams),
       })
     },
     async getAll(): Promise<{ items: any[]; item_count: number; total: number }> {
       const baseHeaders = getApiHeaders()
       const hasToken = !!(typeof window !== 'undefined' && (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')))
       const headers = hasToken ? baseHeaders : { ...baseHeaders, 'X-Session-Id': getGuestSessionId() }
-      return apiRequest<{ items: any[]; item_count: number; total: number }>(API_CONFIG.endpoints.cart, { headers })
+      return apiRequest<{ items: any[]; item_count: number; total: number }>(API_CONFIG.endpoints.cart, { headers }, false)
     },
-    async getAllAuth(): Promise<{ items: any[]; item_count: number; total: number }> {
-      return apiRequest<{ items: any[]; item_count: number; total: number }>(API_CONFIG.endpoints.authCart)
+    async getAllAuth(userId?: string | number): Promise<{ items: any[]; item_count: number; total: number }> {
+      const endpoint = userId ? `${API_CONFIG.endpoints.authCart}?user_id=${userId}` : API_CONFIG.endpoints.authCart
+      return apiRequest<{ items: any[]; item_count: number; total: number }>(endpoint, {}, false)
     },
     async clear(): Promise<{ message?: string }> {
       const baseHeaders = getApiHeaders()
@@ -438,8 +458,9 @@ export const apiService = {
         headers,
       })
     },
-    async clearAuth(): Promise<{ message?: string }> {
-      return apiRequest<{ message?: string }>(API_CONFIG.endpoints.authCartClear, {
+    async clearAuth(userId?: string | number): Promise<{ message?: string }> {
+      const endpoint = userId ? `${API_CONFIG.endpoints.authCartClear}?user_id=${userId}` : API_CONFIG.endpoints.authCartClear
+      return apiRequest<{ message?: string }>(endpoint, {
         method: 'DELETE',
         headers: getApiHeaders(),
       })
@@ -452,6 +473,13 @@ export const apiService = {
       return apiRequest<{ message?: string }>(endpoint, {
         method: 'DELETE',
         headers,
+      })
+    },
+    async removeAuth(itemId: string | number, userId?: string | number): Promise<{ message?: string }> {
+      const endpoint = userId ? `${API_CONFIG.endpoints.authCartRemove(itemId)}?user_id=${userId}` : API_CONFIG.endpoints.authCartRemove(itemId)
+      return apiRequest<{ message?: string }>(endpoint, {
+        method: 'DELETE',
+        headers: getApiHeaders(),
       })
     },
   },
@@ -563,10 +591,10 @@ export const apiService = {
       })
     },
     async getAll(): Promise<{ items: any[]; item_count: number }> {
-      return apiRequest<{ items: any[]; item_count: number }>(API_CONFIG.endpoints.wishlist)
+      return apiRequest<{ items: any[]; item_count: number }>(API_CONFIG.endpoints.wishlist, {}, false)
     },
     async getAllAuth(): Promise<{ items: any[]; item_count: number }> {
-      return apiRequest<{ items: any[]; item_count: number }>(API_CONFIG.endpoints.authWishlist)
+      return apiRequest<{ items: any[]; item_count: number }>(API_CONFIG.endpoints.authWishlist, {}, false)
     },
     async clear(): Promise<{ message: string }> {
       return apiRequest<{ message: string }>(API_CONFIG.endpoints.wishlistClear, {
@@ -595,15 +623,28 @@ export const apiService = {
       })
     },
     async count(): Promise<{ count: number }> {
-      return apiRequest<{ count: number }>(API_CONFIG.endpoints.wishlistCount)
+      return apiRequest<{ count: number }>(API_CONFIG.endpoints.wishlistCount, {}, false)
     },
     async countAuth(): Promise<{ count: number }> {
-      return apiRequest<{ count: number }>(API_CONFIG.endpoints.authWishlistCount)
+      return apiRequest<{ count: number }>(API_CONFIG.endpoints.authWishlistCount, {}, false)
     },
     async check(productId: number | string): Promise<{ in_wishlist: boolean }> {
       const endpoint = API_CONFIG.endpoints.wishlistCheck(productId)
       const resp = await apiRequest<{ is_in_wishlist: boolean; product_id: string | number }>(endpoint)
       return { in_wishlist: !!resp.is_in_wishlist }
+    },
+  },
+
+  reviews: {
+    async list(productId: string | number): Promise<{ items: any[]; average_rating: number; total_reviews: number }> {
+      return apiRequest<{ items: any[]; average_rating: number; total_reviews: number }>(`${API_CONFIG.endpoints.products}/${productId}/reviews`, {}, false)
+    },
+    async create(productId: string | number, payload: { rating: number; title?: string; content: string }): Promise<any> {
+      return apiRequest<any>(`${API_CONFIG.endpoints.products}/${productId}/reviews`, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify(payload),
+      }, false)
     },
   },
   
