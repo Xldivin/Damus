@@ -577,9 +577,13 @@ export const apiService = {
   },
   wishlist: {
     async add(productId: number | string): Promise<{ message: string }> {
+      const baseHeaders = getApiHeaders()
+      const hasToken = !!(typeof window !== 'undefined' && (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')))
+      const headers = hasToken ? baseHeaders : { ...baseHeaders, 'X-Session-Id': getGuestSessionId() }
+      
       return apiRequest<{ message: string }>(API_CONFIG.endpoints.wishlistAdd, {
         method: 'POST',
-        headers: getApiHeaders(),
+        headers,
         body: JSON.stringify({ product_id: productId }),
       })
     },
@@ -591,15 +595,23 @@ export const apiService = {
       })
     },
     async getAll(): Promise<{ items: any[]; item_count: number }> {
-      return apiRequest<{ items: any[]; item_count: number }>(API_CONFIG.endpoints.wishlist, {}, false)
+      const baseHeaders = getApiHeaders()
+      const hasToken = !!(typeof window !== 'undefined' && (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')))
+      const headers = hasToken ? baseHeaders : { ...baseHeaders, 'X-Session-Id': getGuestSessionId() }
+      
+      return apiRequest<{ items: any[]; item_count: number }>(API_CONFIG.endpoints.wishlist, { headers }, false)
     },
     async getAllAuth(): Promise<{ items: any[]; item_count: number }> {
       return apiRequest<{ items: any[]; item_count: number }>(API_CONFIG.endpoints.authWishlist, {}, false)
     },
     async clear(): Promise<{ message: string }> {
+      const baseHeaders = getApiHeaders()
+      const hasToken = !!(typeof window !== 'undefined' && (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')))
+      const headers = hasToken ? baseHeaders : { ...baseHeaders, 'X-Session-Id': getGuestSessionId() }
+      
       return apiRequest<{ message: string }>(API_CONFIG.endpoints.wishlistClear, {
         method: 'DELETE',
-        headers: getApiHeaders(),
+        headers,
       })
     },
     async clearAuth(): Promise<{ message: string }> {
@@ -610,9 +622,13 @@ export const apiService = {
     },
     async removeProduct(productId: number | string): Promise<{ message: string }> {
       const endpoint = API_CONFIG.endpoints.wishlistRemoveProduct(productId)
+      const baseHeaders = getApiHeaders()
+      const hasToken = !!(typeof window !== 'undefined' && (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')))
+      const headers = hasToken ? baseHeaders : { ...baseHeaders, 'X-Session-Id': getGuestSessionId() }
+      
       return apiRequest<{ message: string }>(endpoint, {
         method: 'DELETE',
-        headers: getApiHeaders(),
+        headers,
       })
     },
     async removeAuth(id: number | string): Promise<{ message: string }> {
@@ -623,14 +639,22 @@ export const apiService = {
       })
     },
     async count(): Promise<{ count: number }> {
-      return apiRequest<{ count: number }>(API_CONFIG.endpoints.wishlistCount, {}, false)
+      const baseHeaders = getApiHeaders()
+      const hasToken = !!(typeof window !== 'undefined' && (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')))
+      const headers = hasToken ? baseHeaders : { ...baseHeaders, 'X-Session-Id': getGuestSessionId() }
+      
+      return apiRequest<{ count: number }>(API_CONFIG.endpoints.wishlistCount, { headers }, false)
     },
     async countAuth(): Promise<{ count: number }> {
       return apiRequest<{ count: number }>(API_CONFIG.endpoints.authWishlistCount, {}, false)
     },
     async check(productId: number | string): Promise<{ in_wishlist: boolean }> {
       const endpoint = API_CONFIG.endpoints.wishlistCheck(productId)
-      const resp = await apiRequest<{ is_in_wishlist: boolean; product_id: string | number }>(endpoint)
+      const baseHeaders = getApiHeaders()
+      const hasToken = !!(typeof window !== 'undefined' && (localStorage.getItem('authToken') || sessionStorage.getItem('authToken')))
+      const headers = hasToken ? baseHeaders : { ...baseHeaders, 'X-Session-Id': getGuestSessionId() }
+      
+      const resp = await apiRequest<{ is_in_wishlist: boolean; product_id: string | number }>(endpoint, { headers })
       return { in_wishlist: !!resp.is_in_wishlist }
     },
   },
