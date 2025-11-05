@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 export function ProductDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { addToCart, toggleWishlist, wishlistItems, setSelectedProduct, isLoggedIn } = useAppContext()
+  const { addToCart, toggleWishlist, wishlistItems, setSelectedProduct, isLoggedIn, openCart } = useAppContext()
   
   const [product, setProduct] = useState<any>(null)
   const [relatedProducts, setRelatedProducts] = useState<any[]>([])
@@ -120,6 +120,7 @@ export function ProductDetailPage() {
       }
       addToCart({ ...product, selectedSize }, quantity)
       toast.success(`Added ${quantity} ${product.name}${selectedSize ? ` (${selectedSize})` : ''} to cart`)
+      if (openCart) openCart()
     } catch (e) {
       toast.error('Failed to add to cart')
     }
@@ -558,7 +559,7 @@ export function ProductDetailPage() {
                 <div>
                   <h4 className="font-medium mb-2">Return Policy</h4>
                   <ul className="text-gray-600 space-y-1">
-                    <li>• 30-day return window</li>
+                    <li>• 15-day return window</li>
                     <li>• Items must be in original condition</li>
                     <li>• Free return shipping</li>
                     <li>• Refund processed within 5-7 business days</li>

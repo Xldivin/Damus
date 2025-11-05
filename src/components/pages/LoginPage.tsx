@@ -97,8 +97,6 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Test credentials card removed for real API login */}
-
         {/* Login Form */}
         <Card className="border-gray-200 shadow-lg">
           <CardHeader>

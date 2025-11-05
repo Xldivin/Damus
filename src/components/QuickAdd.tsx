@@ -14,7 +14,7 @@ interface QuickAddProps {
 export function QuickAdd({ product, onAddToCart }: QuickAddProps) {
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [isAdding, setIsAdding] = useState(false)
-  const { addToCart, isLoggedIn } = useAppContext()
+  const { addToCart, isLoggedIn, openCart } = useAppContext()
 
   // Extract sizes from product data
   const sizes = product.sizes || product.c_sizes || product.available_sizes || []
@@ -58,6 +58,7 @@ export function QuickAdd({ product, onAddToCart }: QuickAddProps) {
       }
 
       toast.success(`Added ${product.name}${hasSizes ? ` (${selectedSize})` : ''} to cart`)
+      if (openCart) openCart()
       setSelectedSize('')
     } catch (error) {
       console.error('Failed to add to cart:', error)

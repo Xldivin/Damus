@@ -80,7 +80,7 @@ export function CustomerDashboard() {
     {
       id: 2,
       question: "What is your return policy?",
-      answer: "We offer a 30-day return policy for most items. Items must be in original condition with tags attached. Electronics have a 14-day return window. Custom or personalized items are not eligible for return."
+      answer: "We offer a 15-day return policy for most items. Items must be in original condition with tags attached. Electronics have a 14-day return window. Custom or personalized items are not eligible for return."
     },
     {
       id: 3,
@@ -119,7 +119,7 @@ export function CustomerDashboard() {
 
   const loyaltyProgram = {
     tier: 'Gold',
-    points: 1247,
+    points: 0,
     nextTier: 'Platinum',
     pointsToNext: 753,
     benefits: [
@@ -163,6 +163,18 @@ export function CustomerDashboard() {
       trackingNumber: null
     }
   ]
+  const [rewardPoints, setRewardPoints] = useState<number>(0)
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const hasToken = !!(localStorage.getItem('authToken') || sessionStorage.getItem('authToken'))
+        if (!hasToken) return
+        const bal = await apiService.rewards.balance()
+        setRewardPoints(bal?.points ?? 0)
+      } catch {}
+    })()
+  }, [])
 
   const allOrders = allUserOrders
   const wishlistProducts = mockProducts.filter(product => wishlistItems.includes(product.id))
@@ -427,7 +439,7 @@ export function CustomerDashboard() {
                 <div className="flex items-center space-x-3">
                   <Star className="h-8 w-8 text-yellow-500" />
                   <div>
-                    <p className="text-2xl font-bold">1,247</p>
+                    <p className="text-2xl font-bold">{rewardPoints}</p>
                     <p className="text-gray-600 text-sm">Reward Points</p>
                   </div>
                 </div>

@@ -114,10 +114,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
           <div className="max-w-4xl">
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6">
-              Elevate Your Everyday Tech
+              Elevate Your Everyday Style
             </h1>
             <p className="text-lg sm:text-xl text-gray-700 mb-6 sm:mb-8">
-              Curated electronics with simple, timeless style. Only black and white.
+              Curated fashion with simple, timeless design.
             </p>
             <div className="flex flex-col sm:flex-row sm:space-x-4 sm:space-y-0 space-y-4">
               <Button

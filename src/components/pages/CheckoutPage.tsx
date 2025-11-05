@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, CreditCard, Truck, Check, Lock, MapPin, Smartphone, Building2, Loader2 } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -64,6 +64,8 @@ export function CheckoutPage() {
   
   const [shippingMethod, setShippingMethod] = useState('standard')
   const [guestCheckout, setGuestCheckout] = useState(true)
+  const [rewardBalance, setRewardBalance] = useState<{ points: number; value_aed: number } | null>(null)
+  const [applyPoints, setApplyPoints] = useState(false)
 
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => {
@@ -73,7 +75,13 @@ export function CheckoutPage() {
   }, 0)
   const shippingCost = shippingMethod === 'express' ? 9.99 : shippingMethod === 'overnight' ? 19.99 : 0
   const tax = subtotal * 0.08
-  const total = subtotal + shippingCost + tax
+  const hasToken = !!(localStorage.getItem('authToken') || sessionStorage.getItem('authToken'))
+  const maxRedeemablePoints = rewardBalance ? Math.min(
+    rewardBalance.points,
+    Math.floor(subtotal / 0.02)
+  ) : 0
+  const redeemValueAed = applyPoints && rewardBalance ? Number((maxRedeemablePoints * 0.02).toFixed(2)) : 0
+  const total = subtotal + shippingCost + tax - redeemValueAed
 
   // Debug logging
   console.log('Checkout calculation debug:', {
@@ -82,6 +90,7 @@ export function CheckoutPage() {
     shippingCost,
     tax,
     total,
+    reward: { points: rewardBalance?.points ?? 0, value_aed: rewardBalance?.value_aed ?? 0, applyPoints, maxRedeemablePoints, redeemValueAed },
     cartItemsDetails: cartItems.map(item => ({
       id: item.productId,
       name: item.product?.name,
@@ -118,6 +127,20 @@ export function CheckoutPage() {
   }
 
   const handleFlutterPayment = useFlutterwave(config)
+
+  // Load reward balance for authenticated users
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        if (!hasToken) return
+        const bal = await apiService.rewards.balance()
+        if (!mounted) return
+        setRewardBalance({ points: bal.points ?? 0, value_aed: bal.value_aed ?? 0 })
+      } catch {}
+    })()
+    return () => { mounted = false }
+  }, [hasToken])
 
   const shippingOptions = [
     { id: 'standard', name: 'Standard Shipping', time: '5-7 business days', cost: 0 },
@@ -196,8 +219,9 @@ export function CheckoutPage() {
         tax_amount: Number(tax),
         shipping_amount: Number(shippingCost),
         total_amount: Number(total),
-        currency: 'RWF',
+        currency: 'AED',
         payment_method: paymentInfo.method,
+        points_redeemed: hasToken && applyPoints ? maxRedeemablePoints : 0,
         items: cartItems.map(item => ({
           product_id: item.product.id,
           product_name: item.product.name,
@@ -207,8 +231,11 @@ export function CheckoutPage() {
         }))
       }
 
+      console.groupCollapsed('[Checkout] Order payload');
+      console.log({ payload });
+      console.groupEnd();
+
       // Call appropriate endpoint based on auth state from context
-      const hasToken = !!(localStorage.getItem('authToken') || sessionStorage.getItem('authToken'))
       const resp = hasToken
         ? await apiService.orders.createAuthOrder(payload)
         : await apiService.orders.createGuestCheckout(payload)
@@ -257,6 +284,10 @@ export function CheckoutPage() {
     }
     
     try {
+      console.groupCollapsed('[Checkout] Start payment');
+      console.log('Totals', { subtotal, tax, shippingCost, applyPoints, redeemValueAed, total });
+      console.log('Rewards', { hasToken, rewardBalance, maxRedeemablePoints });
+      console.groupEnd();
       handleFlutterPayment({
         callback: async (response: any) => {
           console.log("Flutterwave response:", response);
@@ -810,6 +841,24 @@ export function CheckoutPage() {
                   <span>Subtotal</span>
                   <span>AED {subtotal.toFixed(2)}</span>
                 </div>
+                {hasToken && rewardBalance && rewardBalance.points > 0 && (
+                  <div className="flex items-start justify-between py-2">
+                    <div className="mr-3">
+                      <label className="font-medium">Reward Points</label>
+                      <div className="text-xs text-gray-600">You have {rewardBalance.points} pts (AED {rewardBalance.value_aed.toFixed(2)})</div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="applyPoints" checked={applyPoints} onCheckedChange={(v: string | boolean) => setApplyPoints(!!v)} />
+                      <Label htmlFor="applyPoints">Apply points</Label>
+                    </div>
+                  </div>
+                )}
+                {applyPoints && redeemValueAed > 0 && (
+                  <div className="flex justify-between text-green-700">
+                    <span>Points discount ({maxRedeemablePoints} pts)</span>
+                    <span>- AED {redeemValueAed.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span>{shippingCost === 0 ? 'FREE' : `AED ${shippingCost.toFixed(2)}`}</span>

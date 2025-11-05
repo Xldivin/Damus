@@ -540,6 +540,7 @@ export const apiService = {
       currency: string
       payment_method: string
       items: Array<{ product_id: number | string; product_name: string; unit_price: number; quantity: number; total_price: number }>
+      points_redeemed?: number
     }): Promise<{ id?: string | number; message?: string }> {
       return apiRequest<{ id?: string | number; message?: string }>(API_CONFIG.endpoints.authOrders, {
         method: 'POST',
@@ -669,6 +670,20 @@ export const apiService = {
         headers: getApiHeaders(),
         body: JSON.stringify(payload),
       }, false)
+    },
+  },
+
+  rewards: {
+    async balance(): Promise<{ points: number; value_aed: number }> {
+      const url = '/api/rewards/balance'
+      const res = await apiRequest<any>(url, { headers: getApiHeaders() }, false)
+      // backend returns { success, data: { points, value_aed } }
+      return (res?.data ?? res) as any
+    },
+    async transactions(): Promise<any[]> {
+      const url = '/api/rewards/transactions'
+      const res = await apiRequest<any>(url, { headers: getApiHeaders() }, false)
+      return (res?.data ?? res) as any
     },
   },
   

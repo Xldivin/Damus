@@ -532,19 +532,7 @@ export function ProductListingPage() {
                         <h3 className="font-semibold mb-2">
                           {product.name}
                         </h3>
-                        <div className="flex items-center mb-2">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${i < Math.floor(product.average_rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm text-gray-600 ml-2">
-                            ({product.total_reviews})
-                          </span>
-                        </div>
+
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-2">
                             <span className="font-bold text-lg">AED {product.effective_price}</span>

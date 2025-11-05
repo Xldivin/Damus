@@ -17,6 +17,7 @@ import { SignupPage } from './components/pages/SignupPage'
 import { Toaster } from './components/ui/sonner'
 import { AppContext, AppContextType, CartItem } from './context/AppContext'
 import './utils/apiTest' // Auto-run API test
+import { SideCart } from './components/SideCart'
 
 // Mock data for products
 export const mockProducts = [
@@ -121,6 +122,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [orderHistory, setOrderHistory] = useState([])
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
   const addToCart = (product: any, quantity: number = 1) => {
     setCartItems(prev => {
@@ -163,6 +165,8 @@ export default function App() {
         : [...prev, productId]
     )
   }
+
+  const openCart = () => setIsCartOpen(true)
 
   const replaceWishlistFromServer = (ids: string[]) => {
     setWishlistItems(ids)
@@ -207,6 +211,9 @@ export default function App() {
     wishlistItems,
     toggleWishlist,
     replaceWishlistFromServer,
+    isCartOpen,
+    setIsCartOpen,
+    openCart,
     isLoggedIn,
     setIsLoggedIn,
     user,
@@ -247,6 +254,7 @@ export default function App() {
           <Footer />
           <Toaster />
         </div>
+        <SideCart />
       </Router>
     </AppContext.Provider>
   )

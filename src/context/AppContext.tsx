@@ -10,6 +10,9 @@ export interface AppContextType {
   wishlistItems: string[]
   toggleWishlist: (productId: string) => void
   replaceWishlistFromServer?: (ids: string[]) => void
+  isCartOpen?: boolean
+  setIsCartOpen?: (open: boolean) => void
+  openCart?: () => void
   isLoggedIn: boolean
   setIsLoggedIn: (status: boolean) => void
   user: any
