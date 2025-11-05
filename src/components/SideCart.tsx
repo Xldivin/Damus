@@ -88,6 +88,7 @@ export function SideCart() {
       unit_price: Number(ci.product?.effective_price ?? ci.product?.price ?? 0),
       quantity: Number(ci.quantity || 0),
       total_price: Number((ci.product?.effective_price ?? ci.product?.price ?? 0) * (ci.quantity || 0)),
+      size: ci.product?.selectedSize || ci.product?.size || ci.product_options?.size || null,
     }))
 
     const payload = {

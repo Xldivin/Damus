@@ -227,7 +227,8 @@ export function CheckoutPage() {
           product_name: item.product.name,
           unit_price: Number(item.product?.effective_price || item.product?.price || 0),
           quantity: Number(item.quantity || 0),
-          total_price: Number((item.product?.effective_price || item.product?.price || 0) * (item.quantity || 0))
+          total_price: Number((item.product?.effective_price || item.product?.price || 0) * (item.quantity || 0)),
+          size: item.product?.selectedSize || item.product?.size || item.product_options?.size || null
         }))
       }
 

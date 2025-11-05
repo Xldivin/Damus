@@ -337,11 +337,7 @@ export function CartPage() {
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span>
-                    {shipping === 0 || appliedPromo === 'FREESHIP' ? (
-                      <span className="text-green-600">FREE</span>
-                    ) : (
-                      `AED ${shipping.toFixed(2)}`
-                    )}
+                    <span className="text-green-600">FREE</span>
                   </span>
                 </div>
                 

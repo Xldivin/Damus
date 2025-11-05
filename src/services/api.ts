@@ -575,6 +575,19 @@ export const apiService = {
       const json = await response.json()
       return json?.data ?? json
     },
+    async downloadInvoice(orderId: string | number): Promise<Blob> {
+      const url = getApiUrl(`/api/customer/orders/${orderId}/invoice`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Invoice download failed: ${response.status} ${response.statusText} ${text ?? ''}`)
+      }
+      return await response.blob()
+    },
   },
   wishlist: {
     async add(productId: number | string): Promise<{ message: string }> {

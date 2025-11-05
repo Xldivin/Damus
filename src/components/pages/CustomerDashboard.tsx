@@ -209,8 +209,21 @@ export function CustomerDashboard() {
     toast.success('Default address updated')
   }
 
-  const handleDownloadInvoice = (orderId: string) => {
-    toast.success(`Invoice for order ${orderId} downloaded`)
+  const handleDownloadInvoice = async (orderId: string) => {
+    try {
+      const blob = await apiService.orders.downloadInvoice(orderId)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `invoice-${orderId}.html`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      toast.success(`Invoice for order ${orderId} downloaded`)
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to download invoice')
+    }
   }
 
   const handleTrackOrder = (trackingNumber: string) => {
