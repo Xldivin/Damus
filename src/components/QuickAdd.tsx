@@ -3,6 +3,7 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Lock, ShoppingCart } from 'lucide-react'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 import { useAppContext } from '../context/AppContext'
 import { apiService } from '../services/api'
 
@@ -14,6 +15,8 @@ interface QuickAddProps {
 export function QuickAdd({ product, onAddToCart }: QuickAddProps) {
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [isAdding, setIsAdding] = useState(false)
+  const [isBuyingNow, setIsBuyingNow] = useState(false)
+  const navigate = useNavigate()
   const { addToCart, isLoggedIn, openCart } = useAppContext()
 
   // Extract sizes from product data
@@ -26,6 +29,31 @@ export function QuickAdd({ product, onAddToCart }: QuickAddProps) {
     setSelectedSize(size)
   }
 
+  const addProductToCart = async () => {
+    // Add to cart via API
+    if (isLoggedIn) {
+      await apiService.cart.addAuth({ 
+        product_id: product.id, 
+        quantity: 1,
+        size: hasSizes ? selectedSize : undefined
+      })
+    } else {
+      await apiService.cart.add({ 
+        product_id: product.id, 
+        quantity: 1,
+        size: hasSizes ? selectedSize : undefined
+      })
+    }
+
+    // Add to local cart state
+    addToCart({ ...product, selectedSize: hasSizes ? selectedSize : undefined })
+    
+    // Call parent callback if provided
+    if (onAddToCart) {
+      onAddToCart(product, hasSizes ? selectedSize : '')
+    }
+  }
+
   const handleQuickAdd = async () => {
     if (hasSizes && !selectedSize) {
       toast.error('Please select a size')
@@ -34,37 +62,37 @@ export function QuickAdd({ product, onAddToCart }: QuickAddProps) {
 
     setIsAdding(true)
     try {
-      // Add to cart via API
-      if (isLoggedIn) {
-        await apiService.cart.addAuth({ 
-          product_id: product.id, 
-          quantity: 1,
-          size: hasSizes ? selectedSize : undefined
-        })
-      } else {
-        await apiService.cart.add({ 
-          product_id: product.id, 
-          quantity: 1,
-          size: hasSizes ? selectedSize : undefined
-        })
-      }
-
-      // Add to local cart state
-      addToCart({ ...product, selectedSize: hasSizes ? selectedSize : undefined })
-      
-      // Call parent callback if provided
-      if (onAddToCart) {
-        onAddToCart(product, hasSizes ? selectedSize : '')
-      }
-
+      await addProductToCart()
       toast.success(`Added ${product.name}${hasSizes ? ` (${selectedSize})` : ''} to cart`)
-      if (openCart) openCart()
+      // Navigate to cart page instead of opening SideCart
+      navigate('/cart')
       setSelectedSize('')
     } catch (error) {
       console.error('Failed to add to cart:', error)
       toast.error('Failed to add to cart')
     } finally {
       setIsAdding(false)
+    }
+  }
+
+  const handleBuyNow = async () => {
+    if (hasSizes && !selectedSize) {
+      toast.error('Please select a size')
+      return
+    }
+
+    setIsBuyingNow(true)
+    try {
+      await addProductToCart()
+      toast.success(`Added ${product.name}${hasSizes ? ` (${selectedSize})` : ''} to cart`)
+      // Open SideCart
+      if (openCart) openCart()
+      setSelectedSize('')
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+      toast.error('Failed to add to cart')
+    } finally {
+      setIsBuyingNow(false)
     }
   }
 
@@ -117,33 +145,52 @@ export function QuickAdd({ product, onAddToCart }: QuickAddProps) {
         </div>
       )}
 
-      {/* Add to Cart Button */}
-      <Button
-        onClick={handleQuickAdd}
-        disabled={(hasSizes && !selectedSize) || isAdding || !product.in_stock}
-        className="w-full bg-black text-white hover:bg-gray-800 disabled:bg-gray-300 text-sm py-2"
-      >
-        {isAdding ? (
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            <span>Adding...</span>
-          </div>
-        ) : (
-          <div className="flex items-center space-x-2">
-            <ShoppingCart className="h-3 w-3" />
-            <span>
-              {!product.in_stock 
-                ? 'Out of Stock' 
-                : hasSizes && !selectedSize
-                  ? 'Select Size'
-                  : hasSizes && selectedSize
-                    ? `Add ${selectedSize}`
-                    : 'Add to Cart'
-              }
-            </span>
-          </div>
-        )}
-      </Button>
+      {/* Buttons Container - Flex Column */}
+      <div className="flex flex-col gap-2">
+        {/* Add to Cart Button */}
+        <Button
+          onClick={handleQuickAdd}
+          disabled={(hasSizes && !selectedSize) || isAdding || isBuyingNow || !product.in_stock}
+          className="w-full bg-black text-white hover:bg-gray-800 disabled:bg-gray-300 text-sm py-2"
+        >
+          {isAdding ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Adding...</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <ShoppingCart className="h-3 w-3" />
+              <span>
+                {!product.in_stock 
+                  ? 'Out of Stock' 
+                  : hasSizes && !selectedSize
+                    ? 'Select Size'
+                    : hasSizes && selectedSize
+                      ? `Add ${selectedSize}`
+                      : 'Add to Cart'
+                }
+              </span>
+            </div>
+          )}
+        </Button>
+
+        {/* Buy Now Button */}
+        <Button
+          onClick={handleBuyNow}
+          disabled={(hasSizes && !selectedSize) || isAdding || isBuyingNow || !product.in_stock}
+          className="w-full bg-black text-white hover:bg-gray-800 disabled:bg-gray-300 text-sm py-2"
+        >
+          {isBuyingNow ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Adding...</span>
+            </div>
+          ) : (
+            <span>Buy now</span>
+          )}
+        </Button>
+      </div>
     </div>
   )
 }

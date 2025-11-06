@@ -346,11 +346,11 @@ export function ProductDetailPage() {
 
           {/* Size Selection - Only show if product has sizes */}
           {(product.sizes || product.c_sizes || product.available_sizes) && (
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-gray-700 uppercase tracking-wide">
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
                 Select Size
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(product.sizes || product.c_sizes || product.available_sizes).map((size: any, index: number) => {
                   const sizeValue = typeof size === 'string' ? size : size.name || size.value || size
                   const isSelected = selectedSize === sizeValue
@@ -363,11 +363,11 @@ export function ProductDetailPage() {
                       onClick={() => isAvailable && setSelectedSize(sizeValue)}
                       disabled={!isAvailable}
                       className={`
-                        px-4 py-3 text-sm font-medium rounded border transition-all relative
+                        px-3 py-2 text-xs font-medium rounded border transition-all relative
                         ${isSelected 
                           ? 'bg-black text-white border-black' 
                           : isAvailable 
-                            ? 'bg-white text-gray-700 border-gray-300 hover:border-gray-400' 
+                            ? 'bg-white text-gray-700 border-gray-300 hover:border-black hover:bg-gray-50' 
                             : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
                         }
                       `}
@@ -375,7 +375,7 @@ export function ProductDetailPage() {
                       {sizeValue}
                       {!isAvailable && (
                         <span className="absolute inset-0 flex items-center justify-center">
-                          <span className="w-full h-px bg-gray-400"></span>
+                          <span className="w-full h-px bg-gray-400 rotate-45 transform"></span>
                         </span>
                       )}
                     </button>
