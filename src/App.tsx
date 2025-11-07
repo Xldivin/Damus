@@ -14,10 +14,16 @@ import { CustomerDashboard } from './components/pages/CustomerDashboard'
 import { AdminDashboard } from './components/pages/AdminDashboard'
 import { LoginPage } from './components/pages/LoginPage'
 import { SignupPage } from './components/pages/SignupPage'
+import { ContactUsPage } from './components/pages/ContactUsPage'
+import { ShippingInfoPage } from './components/pages/ShippingInfoPage'
+import { ReturnsPage } from './components/pages/ReturnsPage'
+import { SupportPage } from './components/pages/SupportPage'
 import { Toaster } from './components/ui/sonner'
 import { AppContext, AppContextType, CartItem } from './context/AppContext'
 import './utils/apiTest' // Auto-run API test
 import { SideCart } from './components/SideCart'
+import { LiveChat } from './components/LiveChat'
+import { LiveChatProvider } from './context/LiveChatContext'
 
 // Mock data for products
 export const mockProducts = [
@@ -232,30 +238,37 @@ export default function App() {
 
   return (
     <AppContext.Provider value={contextValue}>
-      <Router>
-        <div className="min-h-screen bg-white flex flex-col">
-          <Header />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/products" element={<ProductListingPage />} />
-              <Route path="/product/:id" element={<ProductDetailPage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/wishlist" element={<WishlistPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/thank-you" element={<ThankYouPage />} />
-              <Route path="/dashboard" element={isAdmin ? <AdminDashboard /> : <CustomerDashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-            </Routes>
-          </main>
-          <Footer />
-          <Toaster />
-        </div>
-        <SideCart />
-      </Router>
+      <LiveChatProvider>
+        <Router>
+          <div className="min-h-screen bg-white flex flex-col">
+            <Header />
+            <main className="flex-1">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/products" element={<ProductListingPage />} />
+                <Route path="/product/:id" element={<ProductDetailPage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/wishlist" element={<WishlistPage />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/thank-you" element={<ThankYouPage />} />
+                <Route path="/dashboard" element={isAdmin ? <AdminDashboard /> : <CustomerDashboard />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/contact" element={<ContactUsPage />} />
+                <Route path="/shipping" element={<ShippingInfoPage />} />
+                <Route path="/returns" element={<ReturnsPage />} />
+                <Route path="/support" element={<SupportPage />} />
+              </Routes>
+            </main>
+            <Footer />
+            <Toaster />
+          </div>
+          <SideCart />
+          <LiveChat />
+        </Router>
+      </LiveChatProvider>
     </AppContext.Provider>
   )
 }

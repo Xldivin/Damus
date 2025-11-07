@@ -47,6 +47,10 @@ export const API_CONFIG = {
     authWishlistClear: '/api/auth/wishlist/clear',
     authWishlistRemove: (productId: string | number) => `/api/auth/wishlist/remove-product/${productId}`,
     authWishlistCount: '/api/auth/wishlist/count',
+    // Newsletter
+    newsletterSubscribe: '/api/newsletter/subscribe',
+    // Contact
+    contactSend: '/api/contact/send',
     // Orders
     authOrders: '/api/customer/orders',
     authOrdersRecent: '/api/customer/orders/recent',

@@ -1,10 +1,35 @@
+import { useState } from 'react'
 import { Facebook, Twitter, Instagram, Youtube, Mail } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { apiService } from '../services/api'
+import { toast } from 'sonner'
 
 export function Footer() {
   const navigate = useNavigate()
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [isSubscribing, setIsSubscribing] = useState(false)
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newsletterEmail || !newsletterEmail.includes('@')) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    setIsSubscribing(true)
+    try {
+      await apiService.newsletter.subscribe(newsletterEmail)
+      toast.success('Successfully subscribed to our newsletter!')
+      setNewsletterEmail('')
+    } catch (error: any) {
+      console.error('Newsletter subscription error:', error)
+      toast.error(error?.message || 'Failed to subscribe. Please try again.')
+    } finally {
+      setIsSubscribing(false)
+    }
+  }
 
   return (
     <footer className="bg-black text-white">
@@ -18,17 +43,34 @@ export function Footer() {
             <p className="text-gray-300 mb-6 max-w-md mx-auto">
               Subscribe to our newsletter and get the latest deals and product updates.
             </p>
-            <div className="flex max-w-md mx-auto">
+            <form onSubmit={handleNewsletterSubmit} className="flex max-w-md mx-auto">
               <Input
                 type="email"
                 placeholder="Enter your email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
                 className="flex-1 bg-white text-black border-0 rounded-r-none"
+                required
+                disabled={isSubscribing}
               />
-              <Button className="bg-white text-black hover:bg-gray-200 rounded-l-none">
-                <Mail className="h-4 w-4 mr-2" />
-                Subscribe
+              <Button 
+                type="submit"
+                className="bg-white text-black hover:bg-gray-200 rounded-l-none"
+                disabled={isSubscribing}
+              >
+                {isSubscribing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2" />
+                    Subscribing...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Subscribe
+                  </>
+                )}
               </Button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
@@ -112,7 +154,7 @@ export function Footer() {
                   onClick={() => navigate('/products')}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  Laptops
+                  Clothes
                 </button>
               </li>
               <li>
@@ -120,7 +162,7 @@ export function Footer() {
                   onClick={() => navigate('/products')}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  Smartphones
+                  Shoes
                 </button>
               </li>
               <li>
@@ -128,7 +170,7 @@ export function Footer() {
                   onClick={() => navigate('/products')}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  Audio
+                  Sports & Fitness
                 </button>
               </li>
               <li>
@@ -136,7 +178,7 @@ export function Footer() {
                   onClick={() => navigate('/products')}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  Gaming
+                  Fashion & Textiles
                 </button>
               </li>
             </ul>
@@ -149,24 +191,36 @@ export function Footer() {
             </h4>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <button 
+                  onClick={() => navigate('/contact')}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
                   Contact Us
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <button 
+                  onClick={() => navigate('/shipping')}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
                   Shipping Info
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <button 
+                  onClick={() => navigate('/returns')}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
                   Returns
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
+                <button 
+                  onClick={() => navigate('/support')}
+                  className="text-gray-300 hover:text-white transition-colors"
+                >
                   Support
-                </a>
+                </button>
               </li>
             </ul>
           </div>

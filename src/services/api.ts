@@ -699,6 +699,24 @@ export const apiService = {
       return (res?.data ?? res) as any
     },
   },
+
+  newsletter: {
+    async subscribe(email: string): Promise<{ success: boolean; message: string }> {
+      return apiRequest<{ success: boolean; message: string }>(API_CONFIG.endpoints.newsletterSubscribe, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }, false)
+    },
+  },
+
+  contact: {
+    async send(data: { name: string; email: string; subject: string; message: string }): Promise<{ success: boolean; message: string }> {
+      return apiRequest<{ success: boolean; message: string }>(API_CONFIG.endpoints.contactSend, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }, false)
+    },
+  },
   
   // Health check
   async healthCheck(): Promise<boolean> {
