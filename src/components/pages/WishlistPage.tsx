@@ -32,6 +32,12 @@ export function WishlistPage() {
       try {
         setLoading(true)
         setError(null)
+        // Clear old wishlist data immediately when starting to load
+        setWishlistProducts([])
+        setWishlistCount(0)
+        if (replaceWishlistFromServer) {
+          replaceWishlistFromServer([])
+        }
         const resp = isLoggedIn
           ? await apiService.wishlist.getAllAuth()
           : await apiService.wishlist.getAll()
@@ -126,6 +132,31 @@ export function WishlistPage() {
   }
 
 
+  // Show loading state only
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center py-16">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-lg text-gray-600">Loading wishlist...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center py-16">
+          <p className="text-lg text-red-600">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -138,14 +169,7 @@ export function WishlistPage() {
         </p>
       </div>
 
-      {loading && (
-        <div className="text-center py-16">Loading wishlist...</div>
-      )}
-      {error && !loading && (
-        <div className="text-center py-16 text-red-600">{error}</div>
-      )}
-
-      {!loading && !error && wishlistProducts.length > 0 ? (
+      {wishlistProducts.length > 0 ? (
         <>
           {/* Controls */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">

@@ -81,10 +81,10 @@ export function Footer() {
           {/* Company info */}
           <div>
             <h3 className="text-xl font-bold mb-4" >
-              TECHSTORE
+              Rovin
             </h3>
             <p className="text-gray-300 mb-4">
-              Your one-stop destination for the latest technology and electronics.
+              Your one-stop destination for the latest fashion and clothing trends.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-300 hover:text-white transition-colors">
@@ -232,15 +232,21 @@ export function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-300 text-sm">
-              © 2024 TechStore. All rights reserved.
+              © 2025 ShopStore. All rights reserved.
             </p>
             <div className="flex items-center space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-300 hover:text-white text-sm transition-colors">
+              <button 
+                onClick={() => navigate('/privacy')}
+                className="text-gray-300 hover:text-white text-sm transition-colors"
+              >
                 Privacy Policy
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white text-sm transition-colors">
+              </button>
+              <button 
+                onClick={() => navigate('/terms')}
+                className="text-gray-300 hover:text-white text-sm transition-colors"
+              >
                 Terms of Service
-              </a>
+              </button>
               <div className="flex items-center space-x-2">
                 <span className="text-gray-300 text-sm">Payment methods:</span>
                 <div className="flex space-x-1">

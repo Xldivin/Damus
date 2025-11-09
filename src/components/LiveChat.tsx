@@ -16,18 +16,49 @@ interface Message {
 export function LiveChat() {
   const { isOpen, setIsOpen } = useLiveChat()
   const [isMinimized, setIsMinimized] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Hello! How can we help you today?',
-      sender: 'support',
-      timestamp: new Date()
-    }
-  ])
+  const [showOptions, setShowOptions] = useState(true)
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [agentAvailable, setAgentAvailable] = useState(false) // Set to false to show unavailable message
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputId = 'live-chat-input'
+
+  // Initialize messages when chat opens
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      setMessages([
+        {
+          id: '1',
+          text: 'Hello! How are you today?',
+          sender: 'support',
+          timestamp: new Date()
+        },
+        {
+          id: '2',
+          text: 'Please select one of the following options:',
+          sender: 'support',
+          timestamp: new Date()
+        }
+      ])
+      setShowOptions(true)
+    }
+  }, [isOpen, messages.length])
+
+  // Reset chat when closed
+  useEffect(() => {
+    if (!isOpen) {
+      setMessages([])
+      setShowOptions(true)
+      setInputMessage('')
+      setIsMinimized(false)
+    }
+  }, [isOpen])
+
+  // Debug log
+  useEffect(() => {
+    console.log('LiveChat isOpen state changed:', isOpen)
+  }, [isOpen])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -39,9 +70,63 @@ export function LiveChat() {
 
   useEffect(() => {
     if (isOpen && !isMinimized) {
-      inputRef.current?.focus()
+      // Focus input after a short delay to ensure it's rendered
+      setTimeout(() => {
+        const inputElement = document.getElementById(inputId) as HTMLInputElement
+        inputElement?.focus()
+      }, 100)
     }
   }, [isOpen, isMinimized])
+
+  const handleOptionSelect = (option: string) => {
+    // Add user's selected option as a message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: option,
+      sender: 'user',
+      timestamp: new Date()
+    }
+    setMessages(prev => [...prev, userMessage])
+    setShowOptions(false)
+    setIsSending(true)
+
+    // Simulate agent response
+    setTimeout(() => {
+      let responseText = ''
+      
+      if (agentAvailable) {
+        // Agent is available - provide specific responses
+        switch (option) {
+          case 'Find Rovin products that meet my needs':
+            responseText = 'I\'d be happy to help you find the perfect Rovin products! Could you tell me more about what you\'re looking for? For example:\n\n• What type of products are you interested in?\n• Do you have a specific use case in mind?\n• What features are most important to you?\n\nYou can also browse our full product catalog at /products'
+            break
+          case 'Find information about the company':
+            responseText = 'Rovin is a leading provider of innovative solutions. Here\'s some information about us:\n\n• We specialize in delivering high-quality products\n• Our mission is to provide exceptional customer service\n• We\'re committed to innovation and excellence\n\nWould you like to know more about any specific aspect of our company?'
+            break
+          case 'Contact technical support':
+            responseText = 'I can help connect you with our technical support team. Please provide:\n\n• A brief description of your technical issue\n• Any error messages you\'ve encountered\n• Your product model or order number (if applicable)\n\nAlternatively, you can email our technical support team directly at mukunzidamus@gmail.com'
+            break
+          case 'Other':
+            responseText = 'I\'m here to help! Please describe what you need assistance with, and I\'ll do my best to assist you.'
+            break
+          default:
+            responseText = 'Thank you for your message. How can I assist you further?'
+        }
+      } else {
+        // Agent is not available
+        responseText = 'Thank you for your message. Our support team will get back to you shortly. In the meantime, feel free to browse our FAQ section or contact us via email at mukunzidamus@gmail.com'
+      }
+
+      const supportMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: responseText,
+        sender: 'support',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, supportMessage])
+      setIsSending(false)
+    }, 1500)
+  }
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,7 +149,9 @@ export function LiveChat() {
       setTimeout(() => {
         const supportMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: 'Thank you for your message. Our support team will get back to you shortly. In the meantime, feel free to browse our FAQ section or contact us via email at mukunzidamus@gmail.com',
+          text: agentAvailable 
+            ? 'Thank you for your message. How can I assist you further?'
+            : 'Thank you for your message. Our support team will get back to you shortly. In the meantime, feel free to browse our FAQ section or contact us via email at mukunzidamus@gmail.com',
           sender: 'support',
           timestamp: new Date()
         }
@@ -93,7 +180,9 @@ export function LiveChat() {
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
+            console.log('Chat button clicked, opening chat...')
             setIsOpen(true)
+            console.log('setIsOpen called')
           }}
           className="bg-black text-white hover:bg-gray-800 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center p-0 border-0"
           size="lg"
@@ -113,11 +202,37 @@ export function LiveChat() {
     )
   }
 
+  console.log('LiveChat render - isOpen:', isOpen, 'isMinimized:', isMinimized)
+
+  if (!isOpen) {
+    return null // This shouldn't happen, but just in case
+  }
+
   return (
-    <div className={`fixed bottom-6 right-6 z-[9999] transition-all duration-300 ${
-      isMinimized ? 'w-80 h-16' : 'w-96 h-[500px]'
-    }`}>
-      <div className="bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col h-full">
+    <div 
+      className={`fixed bottom-6 right-6 z-[9999] transition-all duration-300 ${
+        isMinimized ? 'w-80 h-16' : 'w-96 h-[500px]'
+      }`}
+      style={{ 
+        position: 'fixed', 
+        bottom: '24px', 
+        right: '24px', 
+        zIndex: 9999,
+        width: isMinimized ? '320px' : '384px',
+        height: isMinimized ? '64px' : '500px',
+        display: 'block',
+        visibility: 'visible',
+        opacity: 1
+      }}
+    >
+      <div 
+        className="bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col h-full" 
+        style={{ 
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
         {/* Header */}
         <div className="bg-black text-white p-4 rounded-t-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -160,7 +275,7 @@ export function LiveChat() {
                         : 'bg-white text-gray-800 border border-gray-200'
                     }`}
                   >
-                    <p className="text-sm">{message.text}</p>
+                    <p className="text-sm whitespace-pre-line">{message.text}</p>
                     <p className={`text-xs mt-1 ${
                       message.sender === 'user' ? 'text-gray-300' : 'text-gray-500'
                     }`}>
@@ -169,6 +284,37 @@ export function LiveChat() {
                   </div>
                 </div>
               ))}
+              
+              {/* Option Buttons */}
+              {showOptions && messages.length >= 2 && (
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleOptionSelect('Find Rovin products that meet my needs')}
+                    className="text-left bg-white border border-gray-300 hover:border-black hover:bg-gray-50 rounded-lg px-4 py-3 text-sm transition-colors"
+                  >
+                    Find Rovin products that meet my needs
+                  </button>
+                  <button
+                    onClick={() => handleOptionSelect('Find information about the company')}
+                    className="text-left bg-white border border-gray-300 hover:border-black hover:bg-gray-50 rounded-lg px-4 py-3 text-sm transition-colors"
+                  >
+                    Find information about the company
+                  </button>
+                  <button
+                    onClick={() => handleOptionSelect('Contact technical support')}
+                    className="text-left bg-white border border-gray-300 hover:border-black hover:bg-gray-50 rounded-lg px-4 py-3 text-sm transition-colors"
+                  >
+                    Contact technical support
+                  </button>
+                  <button
+                    onClick={() => handleOptionSelect('Other')}
+                    className="text-left bg-white border border-gray-300 hover:border-black hover:bg-gray-50 rounded-lg px-4 py-3 text-sm transition-colors"
+                  >
+                    Other
+                  </button>
+                </div>
+              )}
+
               {isSending && (
                 <div className="flex justify-start">
                   <div className="bg-white text-gray-800 border border-gray-200 rounded-lg px-4 py-2">
@@ -187,7 +333,7 @@ export function LiveChat() {
             <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
               <div className="flex gap-2">
                 <Input
-                  ref={inputRef}
+                  id={inputId}
                   type="text"
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}

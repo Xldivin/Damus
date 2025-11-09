@@ -56,6 +56,8 @@ export function CartPage() {
       try {
         setLoading(true)
         setError(null)
+        // Clear old cart data immediately when starting to load
+        if (replaceCartFromServer) replaceCartFromServer([])
         const resp = isLoggedIn
           ? await apiService.cart.getAllAuth(user?.id)
           : await apiService.cart.getAll()
@@ -134,7 +136,33 @@ export function CartPage() {
     navigate(`/product/${product.id}`)
   }
 
-  if (!loading && cartItems.length === 0) {
+  // Show loading state only
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center py-16">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className="text-lg text-gray-600">Loading cart...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center py-16">
+          <p className="text-lg text-red-600">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show empty cart state
+  if (cartItems.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-16">
@@ -158,12 +186,6 @@ export function CartPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {loading && (
-        <div className="text-center py-16">Loading cart...</div>
-      )}
-      {error && !loading && (
-        <div className="text-center py-4 text-red-600">{error}</div>
-      )}
       {/* Header */}
       <div className="flex items-center mb-8">
         <Button 

@@ -68,8 +68,7 @@ export function ContactUsPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Email</h3>
-                  <p className="text-gray-600 text-sm">support@damus.com</p>
-                  <p className="text-gray-600 text-sm">info@damus.com</p>
+                  <p className="text-gray-600 text-sm">mukunzidamus@gmail.com</p>
                 </div>
               </div>
 

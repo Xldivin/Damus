@@ -165,21 +165,26 @@ export function ProductListingPage() {
 
   const handleWishlistClick = async (e: any, productId: number | string) => {
     e.stopPropagation()
+    
+    // Find the product to check its current wishlist status
+    const product = products.find(p => p.id === productId)
+    const isInWishlist = product?.__in_wishlist || wishlistItems.includes(String(productId))
+    
     try {
-      // Check current status
-      const status = await apiService.wishlist.check(productId)
-      if (status?.in_wishlist) {
+      if (isInWishlist) {
+        // Remove from wishlist
         if (isLoggedIn) {
           await apiService.wishlist.removeAuth(productId)
         } else {
           await apiService.wishlist.removeProduct(productId)
         }
-        // also reflect locally
+        // Update local state
         toggleWishlist(String(productId))
-        // update local product flag
+        // Update local product flag
         setProducts(prev => prev.map(p => p.id === productId ? { ...p, __in_wishlist: false } : p))
         toast.success('Removed from wishlist')
       } else {
+        // Add to wishlist
         const resp = isLoggedIn
           ? await apiService.wishlist.addAuth(productId)
           : await apiService.wishlist.add(productId)
@@ -189,8 +194,25 @@ export function ProductListingPage() {
         toast.success('Added to wishlist')
       }
     } catch (err: any) {
-      console.error('Failed to add to wishlist', { productId, err })
-      toast.error('Failed to add to wishlist')
+      console.error('Wishlist toggle failed', { productId, err })
+      // Handle specific error messages
+      if (err?.message?.includes('already in your wishlist') || err?.body?.includes('already in your wishlist')) {
+        // If it's already in wishlist, try to remove it
+        try {
+          if (isLoggedIn) {
+            await apiService.wishlist.removeAuth(productId)
+          } else {
+            await apiService.wishlist.removeProduct(productId)
+          }
+          toggleWishlist(String(productId))
+          setProducts(prev => prev.map(p => p.id === productId ? { ...p, __in_wishlist: false } : p))
+          toast.success('Removed from wishlist')
+        } catch (removeErr) {
+          toast.error('Failed to update wishlist')
+        }
+      } else {
+        toast.error(err?.message || 'Failed to update wishlist')
+      }
     }
   }
 

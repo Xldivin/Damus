@@ -136,7 +136,7 @@ export function Header() {
                 onClick={() => navigate('/')}
                 className="text-xl sm:text-2xl font-bold text-black hover:text-gray-600 transition-colors"
               >
-                TECHSTORE
+                Rovin
               </button>
             </div>
 

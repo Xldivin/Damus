@@ -465,7 +465,7 @@ export function CustomerDashboard() {
                   <CreditCard className="h-8 w-8 text-green-600" />
                   <div>
                     <p className="text-2xl font-bold">
-                      ${allOrders.reduce((sum, order) => sum + order.total, 0).toFixed(0)}
+                      AED {allOrders.reduce((sum, order) => sum + order.total, 0).toFixed(0)}
                     </p>
                     <p className="text-gray-600 text-sm">Total Spent</p>
                   </div>
@@ -511,7 +511,7 @@ export function CustomerDashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">${order.total}</p>
+                      <p className="font-bold">AED {order.total}</p>
                       <Button
                         variant="outline"
                         size="sm"
@@ -564,7 +564,7 @@ export function CustomerDashboard() {
                         </Badge>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-lg">${order.total}</p>
+                        <p className="font-bold text-lg">AED {order.total}</p>
                         <div className="flex space-x-2 mt-2">
                           {order.trackingNumber && (
                             <Button
@@ -608,7 +608,7 @@ export function CustomerDashboard() {
                                   <h4 className="font-medium">{item.product.name}</h4>
                                   <p className="text-gray-600 text-sm">Quantity: {item.quantity}</p>
                                   <p className="font-semibold">
-                                    ${item.product.price * item.quantity}
+                                    AED {item.product.price * item.quantity}
                                   </p>
                                 </div>
                                 <Button

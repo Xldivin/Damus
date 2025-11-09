@@ -18,12 +18,15 @@ import { ContactUsPage } from './components/pages/ContactUsPage'
 import { ShippingInfoPage } from './components/pages/ShippingInfoPage'
 import { ReturnsPage } from './components/pages/ReturnsPage'
 import { SupportPage } from './components/pages/SupportPage'
+import { PrivacyPolicyPage } from './components/pages/PrivacyPolicyPage'
+import { TermsOfServicePage } from './components/pages/TermsOfServicePage'
 import { Toaster } from './components/ui/sonner'
 import { AppContext, AppContextType, CartItem } from './context/AppContext'
 import './utils/apiTest' // Auto-run API test
 import { SideCart } from './components/SideCart'
 import { LiveChat } from './components/LiveChat'
 import { LiveChatProvider } from './context/LiveChatContext'
+import { ScrollToTop } from './components/ScrollToTop'
 
 // Mock data for products
 export const mockProducts = [
@@ -240,6 +243,7 @@ export default function App() {
     <AppContext.Provider value={contextValue}>
       <LiveChatProvider>
         <Router>
+          <ScrollToTop />
           <div className="min-h-screen bg-white flex flex-col">
             <Header />
             <main className="flex-1">
@@ -256,10 +260,12 @@ export default function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
-                <Route path="/contact" element={<ContactUsPage />} />
-                <Route path="/shipping" element={<ShippingInfoPage />} />
-                <Route path="/returns" element={<ReturnsPage />} />
-                <Route path="/support" element={<SupportPage />} />
+              <Route path="/contact" element={<ContactUsPage />} />
+              <Route path="/shipping" element={<ShippingInfoPage />} />
+              <Route path="/returns" element={<ReturnsPage />} />
+              <Route path="/support" element={<SupportPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsOfServicePage />} />
               </Routes>
             </main>
             <Footer />

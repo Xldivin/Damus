@@ -29,9 +29,9 @@ export function ReturnsPage() {
             <div className="flex items-start gap-4">
               <CheckCircle className="h-6 w-6 text-green-600 mt-1" />
               <div>
-                <h3 className="font-semibold mb-2">30-Day Return Window</h3>
+                <h3 className="font-semibold mb-2">15-Day Return Window</h3>
                 <p className="text-gray-600">
-                  You have 30 days from the date of delivery to return any item for a full refund or exchange.
+                  You have 15 days from the date of delivery to return any item for a full refund or exchange.
                 </p>
               </div>
             </div>
@@ -209,4 +209,5 @@ export function ReturnsPage() {
     </div>
   )
 }
+
 
