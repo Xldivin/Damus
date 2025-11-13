@@ -5,11 +5,21 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { apiService } from '../services/api'
 import { toast } from 'sonner'
+import { useAppContext } from '../context/AppContext'
 
 export function Footer() {
   const navigate = useNavigate()
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [isSubscribing, setIsSubscribing] = useState(false)
+  const { user } = useAppContext()
+  const isSuperAdmin = (() => {
+    try {
+      const roles = (user as any)?.roles || []
+      return !!roles.some((r: any) => String((r?.slug || r?.name || '')).toLowerCase() === 'super-admin')
+    } catch {
+      return false
+    }
+  })()
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,6 +44,7 @@ export function Footer() {
   return (
     <footer className="bg-black text-white">
       {/* Newsletter section */}
+      {!isSuperAdmin && (
       <div className="border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
@@ -74,6 +85,7 @@ export function Footer() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Main footer content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

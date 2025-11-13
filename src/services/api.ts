@@ -209,6 +209,18 @@ export const productApi = {
   async getAllProducts(): Promise<any[]> {
     return apiRequest<any[]>(API_CONFIG.endpoints.products, {}, true)
   },
+  pages: {
+    async get(slug: string): Promise<{ success: boolean; data: any }> {
+      return apiRequest<{ success: boolean; data: any }>(API_CONFIG.endpoints.pageShow(slug), {}, false)
+    },
+    async upsert(slug: string, payload: { title: string; content?: string; sections?: any[] }): Promise<{ success: boolean; message: string; data: any }> {
+      return apiRequest<{ success: boolean; message: string; data: any }>(API_CONFIG.endpoints.pageUpsert(slug), {
+        method: 'PUT',
+        headers: getApiHeaders(),
+        body: JSON.stringify(payload),
+      }, false)
+    },
+  },
 
   // Get product by ID with medium cache TTL
   async getProductById(id: string): Promise<any> {
@@ -319,6 +331,88 @@ export const categoryApi = {
 export const apiService = {
   products: productApi,
   categories: categoryApi,
+  chat: {
+    async send(payload: { sessionId: string; text: string; metadata?: Record<string, any> }): Promise<{ success: boolean; id?: string | number }> {
+      return apiRequest<{ success: boolean; id?: string | number }>(API_CONFIG.endpoints.chatSend, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify(payload),
+      }, false)
+    },
+    async fetchThread(sessionId: string): Promise<{ messages: Array<{ id: string; text: string; sender: 'user' | 'support'; timestamp?: string }> }> {
+      const url = getApiUrl(API_CONFIG.endpoints.chatThread(sessionId))
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to fetch thread: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      // Backend returns { messages: [...] } directly, not wrapped in { success, data }
+      if (json.messages) {
+        return { messages: json.messages }
+      }
+      // Fallback if wrapped in success/data structure
+      if (json.success && json.data?.messages) {
+        return { messages: json.data.messages }
+      }
+      return { messages: [] }
+    },
+    async adminThreads(): Promise<{ threads: Array<{ sessionId: string; lastMessage?: any; unreadCount: number }> }> {
+      const url = getApiUrl(API_CONFIG.endpoints.adminChatThreads)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to fetch chat threads: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      // Backend returns { threads: [...] } directly, not wrapped in { success, data }
+      if (json.threads) {
+        return { threads: json.threads }
+      }
+      // Fallback if wrapped in success/data structure
+      if (json.success && json.data?.threads) {
+        return { threads: json.data.threads }
+      }
+      return { threads: [] }
+    },
+    async adminReply(payload: { sessionId: string; text: string }): Promise<{ success: boolean; id?: string | number }> {
+      const url = getApiUrl(API_CONFIG.endpoints.adminChatReply)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+        body: JSON.stringify(payload),
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to send reply: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      // Backend returns { success: true, id: ... } directly
+      if (json.success) {
+        return { success: true, id: json.id }
+      }
+      // Fallback if wrapped in data structure
+      if (json.data?.success) {
+        return { success: true, id: json.data.id }
+      }
+      throw new Error('Unexpected response format from reply endpoint')
+    },
+  },
   profile: {
     async getCurrentUser(): Promise<any> {
       return apiRequest<any>(API_CONFIG.endpoints.me, {
@@ -714,6 +808,385 @@ export const apiService = {
       return apiRequest<{ success: boolean; message: string }>(API_CONFIG.endpoints.contactSend, {
         method: 'POST',
         body: JSON.stringify(data),
+      }, false)
+    },
+  },
+  shippingInfo: {
+    async get(): Promise<any> {
+      return apiRequest<any>(API_CONFIG.endpoints.shippingInfo, {}, false)
+    },
+    async update(data: any): Promise<{ success: boolean; message: string; data: any }> {
+      return apiRequest<{ success: boolean; message: string; data: any }>(API_CONFIG.endpoints.shippingInfo, {
+        method: 'PUT',
+        headers: getApiHeaders(),
+        body: JSON.stringify(data),
+      }, false)
+    },
+  },
+  returnsInfo: {
+    async get(): Promise<any> {
+      return apiRequest<any>(API_CONFIG.endpoints.returnsInfo, {}, false)
+    },
+    async update(data: any): Promise<{ success: boolean; message: string; data: any }> {
+      return apiRequest<{ success: boolean; message: string; data: any }>(API_CONFIG.endpoints.returnsInfo, {
+        method: 'PUT',
+        headers: getApiHeaders(),
+        body: JSON.stringify(data),
+      }, false)
+    },
+  },
+  privacyInfo: {
+    async get(): Promise<any> {
+      return apiRequest<any>(API_CONFIG.endpoints.privacyInfo, {}, false)
+    },
+    async update(data: any): Promise<{ success: boolean; message: string; data: any }> {
+      return apiRequest<{ success: boolean; message: string; data: any }>(API_CONFIG.endpoints.privacyInfo, {
+        method: 'PUT',
+        headers: getApiHeaders(),
+        body: JSON.stringify(data),
+      }, false)
+    },
+  },
+  termsInfo: {
+    async get(): Promise<any> {
+      return apiRequest<any>(API_CONFIG.endpoints.termsInfo, {}, false)
+    },
+    async update(data: any): Promise<{ success: boolean; message: string; data: any }> {
+      return apiRequest<{ success: boolean; message: string; data: any }>(API_CONFIG.endpoints.termsInfo, {
+        method: 'PUT',
+        headers: getApiHeaders(),
+        body: JSON.stringify(data),
+      }, false)
+    },
+  },
+  adminDashboard: {
+    async getOverview(): Promise<any> {
+      return apiRequest<any>(API_CONFIG.endpoints.adminDashboardOverview, {
+        headers: getApiHeaders(),
+      }, false)
+    },
+    async getAnalytics(params?: { months?: number }): Promise<any> {
+      const queryParams = params ? `?${new URLSearchParams(params as any).toString()}` : ''
+      return apiRequest<any>(API_CONFIG.endpoints.adminDashboardAnalytics + queryParams, {
+        headers: getApiHeaders(),
+      }, false)
+    },
+  },
+  adminProducts: {
+    async getAll(params?: { include_inactive?: boolean; category_id?: number; search?: string; per_page?: number }): Promise<{ data: any[]; pagination?: any }> {
+      const queryParams = new URLSearchParams()
+      if (params?.include_inactive) queryParams.append('include_inactive', 'true')
+      if (params?.category_id) queryParams.append('category_id', params.category_id.toString())
+      if (params?.search) queryParams.append('search', params.search)
+      if (params?.per_page) queryParams.append('per_page', params.per_page.toString())
+      
+      const url = `${API_CONFIG.endpoints.products}${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+      const url_full = getApiUrl(url)
+      
+      const response = await fetch(url_full, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products: ${response.status}`)
+      }
+      
+      const json = await response.json()
+      
+      // Handle API response structure: { success: true, data: [...], pagination: {...} }
+      if (json.success && json.data) {
+        return { 
+          data: Array.isArray(json.data) ? json.data : [], 
+          pagination: json.pagination 
+        }
+      }
+      
+      // Fallback for different response structures
+      if (Array.isArray(json)) {
+        return { data: json }
+      }
+      
+      return { data: json.data || [] }
+    },
+    async create(productData: {
+      name: string
+      description: string
+      short_description?: string
+      price: number
+      original_price?: number
+      cost_price?: number
+      category_id: number
+      subcategory_id?: number
+      brand_id?: number
+      sku?: string
+      stock_quantity: number
+      min_stock_level?: number
+      weight?: number
+      dimensions?: string
+      specifications?: any
+      features?: any[]
+      tags?: any[]
+      meta_title?: string
+      meta_description?: string
+      is_active?: boolean
+      is_featured?: boolean
+      is_digital?: boolean
+      images?: Array<{ url: string; alt_text?: string; is_primary?: boolean }>
+    }): Promise<any> {
+      return apiRequest<any>(API_CONFIG.endpoints.products, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify(productData),
+      }, false)
+    },
+    async update(id: number | string, productData: {
+      name: string
+      description: string
+      short_description?: string
+      price: number
+      original_price?: number
+      cost_price?: number
+      category_id: number
+      subcategory_id?: number
+      brand_id?: number
+      sku?: string
+      stock_quantity: number
+      min_stock_level?: number
+      weight?: number
+      dimensions?: string
+      meta_title?: string
+      meta_description?: string
+      is_active?: boolean
+      is_featured?: boolean
+      is_digital?: boolean
+    }): Promise<any> {
+      return apiRequest<any>(`${API_CONFIG.endpoints.products}/${id}`, {
+        method: 'PUT',
+        headers: getApiHeaders(),
+        body: JSON.stringify(productData),
+      }, false)
+    },
+    async getFilterOptions(): Promise<{ brands: any[]; categories: any[] }> {
+      const url = getApiUrl(`${API_CONFIG.endpoints.products}/filter-options`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch filter options: ${response.status}`)
+      }
+      
+      const json = await response.json()
+      
+      // Handle API response structure: { success: true, data: { brands: [...], categories: [...] } }
+      if (json.success && json.data) {
+        return json.data
+      }
+      
+      // Fallback
+      return json.data || json
+    },
+    async delete(id: number | string): Promise<any> {
+      return apiRequest<any>(`${API_CONFIG.endpoints.products}/${id}`, {
+        method: 'DELETE',
+        headers: getApiHeaders(),
+      }, false)
+    },
+  },
+  adminCategories: {
+    async create(categoryData: { name: string; description?: string; is_active?: boolean }): Promise<any> {
+      const url = getApiUrl(API_CONFIG.endpoints.categories)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+        body: JSON.stringify(categoryData),
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to create category: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      // Handle API response structure: { success: true, data: {...} }
+      if (json.success && json.data) {
+        return json.data
+      }
+      return json
+    },
+  },
+  adminBrands: {
+    async create(brandData: { name: string; description?: string; is_active?: boolean }): Promise<any> {
+      const url = getApiUrl('/api/brands')
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+        body: JSON.stringify(brandData),
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to create brand: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      // Handle API response structure: { success: true, data: {...} }
+      if (json.success && json.data) {
+        return json.data
+      }
+      return json
+    },
+  },
+  adminMedia: {
+    async upload(file: File, folder?: string, usageType: string = 'product_image'): Promise<any> {
+      const formData = new FormData()
+      formData.append('file', file)
+      if (folder) formData.append('folder', folder)
+      formData.append('usage_type', usageType)
+      
+      const url = getApiUrl('/api/media/upload')
+      const headers = getApiHeaders()
+      // Remove Content-Type header to let browser set it with boundary for FormData
+      delete headers['Content-Type']
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        credentials: API_CONFIG.credentials,
+        body: formData,
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to upload image: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      if (json.success && json.data) {
+        return json.data
+      }
+      return json
+    },
+  },
+  adminOrders: {
+    async getAll(params?: { status?: string; search?: string; per_page?: number }): Promise<{ data: any[]; pagination?: any }> {
+      const queryParams = new URLSearchParams()
+      if (params?.status && params.status !== 'all') queryParams.append('status', params.status)
+      if (params?.search) queryParams.append('search', params.search)
+      if (params?.per_page) queryParams.append('per_page', params.per_page.toString())
+      
+      const url = getApiUrl(`/api/admin/orders${queryParams.toString() ? `?${queryParams.toString()}` : ''}`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to fetch orders: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      if (json.success && json.data) {
+        return { data: json.data, pagination: json.pagination }
+      }
+      return { data: [] }
+    },
+    async getById(id: number | string): Promise<any> {
+      const url = getApiUrl(`/api/admin/orders/${id}`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to fetch order: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      if (json.success && json.data) {
+        return json.data
+      }
+      return json
+    },
+    async updateStatus(id: number | string, status: string): Promise<any> {
+      return apiRequest<any>(`/api/admin/orders/${id}/status`, {
+        method: 'PATCH',
+        headers: getApiHeaders(),
+        body: JSON.stringify({ status }),
+      }, false)
+    },
+    async delete(id: number | string): Promise<any> {
+      return apiRequest<any>(`/api/admin/orders/${id}`, {
+        method: 'DELETE',
+        headers: getApiHeaders(),
+      }, false)
+    },
+  },
+  adminUsers: {
+    async getAll(params?: { status?: string; search?: string; per_page?: number }): Promise<{ data: any[]; pagination?: any }> {
+      const queryParams = new URLSearchParams()
+      if (params?.status && params.status !== 'all') queryParams.append('status', params.status)
+      if (params?.search) queryParams.append('search', params.search)
+      if (params?.per_page) queryParams.append('per_page', params.per_page.toString())
+      
+      const url = getApiUrl(`/api/admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to fetch users: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      if (json.success && json.data) {
+        return { data: json.data, pagination: json.pagination }
+      }
+      return { data: [] }
+    },
+    async getById(id: number | string): Promise<any> {
+      const url = getApiUrl(`/api/admin/users/${id}`)
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: getApiHeaders(),
+        credentials: API_CONFIG.credentials,
+      })
+      
+      if (!response.ok) {
+        const text = await response.text().catch(() => undefined)
+        throw new Error(`Failed to fetch user: ${response.status} ${text ?? ''}`)
+      }
+      
+      const json = await response.json()
+      if (json.success && json.data) {
+        return json.data
+      }
+      return json
+    },
+    async update(id: number | string, userData: { name?: string; email?: string; phone?: string; status?: string }): Promise<any> {
+      return apiRequest<any>(`/api/admin/users/${id}`, {
+        method: 'PUT',
+        headers: getApiHeaders(),
+        body: JSON.stringify(userData),
+      }, false)
+    },
+    async delete(id: number | string): Promise<any> {
+      return apiRequest<any>(`/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: getApiHeaders(),
       }, false)
     },
   },

@@ -28,6 +28,14 @@ export function Header() {
     replaceWishlistFromServer,
   } = useAppContext()
   const location = useLocation()
+  const isSuperAdmin = (() => {
+    try {
+      const roles = (user as any)?.roles || []
+      return !!roles.some((r: any) => String((r?.slug || r?.name || '')).toLowerCase() === 'super-admin')
+    } catch {
+      return false
+    }
+  })()
 
   // Keep counts consistent by syncing from server on auth or route changes
   useEffect(() => {
@@ -140,46 +148,52 @@ export function Header() {
               </button>
             </div>
 
-            {/* Desktop nav (moved to first row) */}
-            <nav className="flex items-center space-x-6 absolute left-1/2 transform -translate-x-1/2">
-              {navItems.map((item, index) => (
-                <button
-                  key={index}
-                  onClick={item.action}
-                  className="text-gray-700 hover:text-black transition-colors font-medium"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
+            {/* Desktop nav (hidden for super-admin) */}
+            {!isSuperAdmin && (
+              <nav className="flex items-center space-x-6 absolute left-1/2 transform -translate-x-1/2">
+                {navItems.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={item.action}
+                    className="text-gray-700 hover:text-black transition-colors font-medium"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+            )}
 
             {/* Right actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* Wishlist */}
-              <button 
-                onClick={() => navigate('/wishlist')}
-                className="relative p-1.5 sm:p-2 text-gray-600 hover:text-black transition-colors"
-              >
-                <Heart className="h-5 w-5 sm:h-6 sm:w-6" />
-                {wishlistCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 text-xs bg-black text-white">
-                    {wishlistCount}
-                  </Badge>
-                )}
-              </button>
+              {/* Wishlist (hidden for super-admin) */}
+              {!isSuperAdmin && (
+                <button 
+                  onClick={() => navigate('/wishlist')}
+                  className="relative p-1.5 sm:p-2 text-gray-600 hover:text-black transition-colors"
+                >
+                  <Heart className="h-5 w-5 sm:h-6 sm:w-6" />
+                  {wishlistCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 text-xs bg-black text-white">
+                      {wishlistCount}
+                    </Badge>
+                  )}
+                </button>
+              )}
 
-              {/* Cart */}
-              <button 
-                onClick={() => navigate('/cart')}
-                className="relative p-1.5 sm:p-2 text-gray-600 hover:text-black transition-colors"
-              >
-                <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
-                {cartCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 text-xs bg-black text-white">
-                    {cartCount}
-                  </Badge>
-                )}
-              </button>
+              {/* Cart (hidden for super-admin) */}
+              {!isSuperAdmin && (
+                <button 
+                  onClick={() => navigate('/cart')}
+                  className="relative p-1.5 sm:p-2 text-gray-600 hover:text-black transition-colors"
+                >
+                  <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
+                  {cartCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 text-xs bg-black text-white">
+                      {cartCount}
+                    </Badge>
+                  )}
+                </button>
+              )}
 
               {/* User menu */}
               <Popover open={userModalOpen} onOpenChange={setUserModalOpen}>
@@ -343,23 +357,25 @@ export function Header() {
                       <h2 className="text-lg font-semibold">Menu</h2>
                     </div>
                     
-                    {/* Navigation items */}
-                    <nav className="flex-1 py-4">
-                      <div className="space-y-2">
-                        {navItems.map((item, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              item.action()
-                              setMobileMenuOpen(false)
-                            }}
-                            className="w-full text-left py-2 px-0 text-gray-700 hover:text-black transition-colors"
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                    </nav>
+                    {/* Navigation items (hidden for super-admin) */}
+                    {!isSuperAdmin && (
+                      <nav className="flex-1 py-4">
+                        <div className="space-y-2">
+                          {navItems.map((item, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                item.action()
+                                setMobileMenuOpen(false)
+                              }}
+                              className="w-full text-left py-2 px-0 text-gray-700 hover:text-black transition-colors"
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      </nav>
+                    )}
                   </div>
                 </SheetContent>
               </Sheet>

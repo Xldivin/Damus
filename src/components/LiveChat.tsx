@@ -5,6 +5,8 @@ import { Input } from './ui/input'
 import { toast } from 'sonner'
 import { apiService } from '../services/api'
 import { useLiveChat } from '../context/LiveChatContext'
+import { getGuestSessionId } from '../services/apiConfig'
+import { useAppContext } from '../context/AppContext'
 
 interface Message {
   id: string
@@ -15,6 +17,7 @@ interface Message {
 
 export function LiveChat() {
   const { isOpen, setIsOpen } = useLiveChat()
+  const { user, isAdmin } = useAppContext()
   const [isMinimized, setIsMinimized] = useState(false)
   const [showOptions, setShowOptions] = useState(true)
   const [messages, setMessages] = useState<Message[]>([])
@@ -23,6 +26,22 @@ export function LiveChat() {
   const [agentAvailable, setAgentAvailable] = useState(false) // Set to false to show unavailable message
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputId = 'live-chat-input'
+  const [sessionId, setSessionId] = useState<string>('')
+  
+  // Check if user is super admin or admin
+  const isSuperAdmin = (() => {
+    try {
+      const roles = (user as any)?.roles || []
+      return !!roles.some((r: any) => String((r?.slug || r?.name || '')).toLowerCase() === 'super-admin')
+    } catch {
+      return false
+    }
+  })()
+  
+  // Hide chat button for super admin and admin users
+  if (isSuperAdmin || isAdmin) {
+    return null
+  }
 
   // Initialize messages when chat opens
   useEffect(() => {
@@ -54,6 +73,44 @@ export function LiveChat() {
       setIsMinimized(false)
     }
   }, [isOpen])
+
+  // Ensure a stable session id for guest chat
+  useEffect(() => {
+    try {
+      const sid = getGuestSessionId()
+      setSessionId(sid)
+    } catch {
+      setSessionId('guest')
+    }
+  }, [])
+
+  // Poll backend thread when open
+  useEffect(() => {
+    if (!isOpen || !sessionId) return
+    let mounted = true
+    const load = async () => {
+      try {
+        const data = await apiService.chat.fetchThread(sessionId)
+        if (!mounted) return
+        const mapped = (data.messages || []).map(m => ({
+          id: m.id,
+          text: m.text,
+          sender: m.sender,
+          timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+        })) as Message[]
+        setMessages(prev => {
+          // Avoid replacing initial greeting if there are no backend messages yet
+          return mapped.length > 0 ? mapped : prev
+        })
+      } catch {}
+    }
+    load()
+    const interval = setInterval(load, 3000)
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
+  }, [isOpen, sessionId])
 
   // Debug log
   useEffect(() => {
@@ -144,23 +201,9 @@ export function LiveChat() {
     setIsSending(true)
 
     try {
-      // Send message to backend/API
-      // For now, simulate a response
-      setTimeout(() => {
-        const supportMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: agentAvailable 
-            ? 'Thank you for your message. How can I assist you further?'
-            : 'Thank you for your message. Our support team will get back to you shortly. In the meantime, feel free to browse our FAQ section or contact us via email at mukunzidamus@gmail.com',
-          sender: 'support',
-          timestamp: new Date()
-        }
-        setMessages(prev => [...prev, supportMessage])
-        setIsSending(false)
-      }, 1500)
-
-      // TODO: Replace with actual API call
-      // await apiService.chat.send({ message: inputMessage })
+      await apiService.chat.send({ sessionId, text: userMessage.text })
+      // Reply will appear via polling when admin responds
+      setIsSending(false)
     } catch (error) {
       console.error('Failed to send message:', error)
       toast.error('Failed to send message. Please try again.')

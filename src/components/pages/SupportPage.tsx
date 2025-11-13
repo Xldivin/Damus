@@ -1,14 +1,20 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { HelpCircle, MessageSquare, Book, Mail, Phone, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { useLiveChat } from '../../context/LiveChatContext'
+import { useAppContext } from '../../context/AppContext'
+// no edit UI on this page
 
 export function SupportPage() {
   const navigate = useNavigate()
   const { openChat } = useLiveChat()
+  const { user } = useAppContext()
+  // Static header content
+  const pageTitle = 'Support Center'
+  const pageIntro = 'Find answers to common questions or get in touch with our support team'
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
 
@@ -109,10 +115,10 @@ export function SupportPage() {
       {/* Header */}
       <div className="text-center mb-8 sm:mb-12">
         <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-          Support Center
+          {pageTitle}
         </h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Find answers to common questions or get in touch with our support team
+          {pageIntro}
         </p>
       </div>
 
@@ -291,6 +297,8 @@ export function SupportPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* No edit modal */}
     </div>
   )
 }

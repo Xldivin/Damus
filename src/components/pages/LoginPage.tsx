@@ -43,7 +43,11 @@ export function LoginPage() {
       const resp = await apiService.auth.login({ email: formData.email, password: formData.password })
       setUser(resp.user)
       setIsLoggedIn(true)
-      setIsAdmin(!!resp.user?.roles?.some?.((r: any) => String(r.name || r) === 'admin'))
+      const roles = resp.user?.roles || []
+      const roleNames = roles.map((r: any) => String((r.slug || r.name || '')).toLowerCase())
+      const isSuperAdmin = roleNames.includes('super-admin')
+      const isAdminRole = isSuperAdmin || roleNames.includes('admin')
+      setIsAdmin(isAdminRole)
 
       // Remember me: keep token in localStorage; otherwise clear it on unload
       if (!formData.rememberMe) {
@@ -67,7 +71,7 @@ export function LoginPage() {
       } catch {}
 
       toast.success('Welcome back!')
-      navigate('/dashboard')
+      navigate(isSuperAdmin ? '/admin' : '/dashboard')
     } catch (err: any) {
       toast.error('Invalid email or password')
     } finally {

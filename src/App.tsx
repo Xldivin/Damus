@@ -204,7 +204,10 @@ export default function App() {
         if (raw) {
           const parsed = JSON.parse(raw)
           setUser(parsed)
-          const hasAdmin = !!parsed?.roles?.some?.((r: any) => String(r.name || r) === 'admin')
+          const hasAdmin = !!parsed?.roles?.some?.((r: any) => {
+            const val = String((r.slug || r.name || '')).toLowerCase()
+            return val === 'admin' || val === 'super-admin'
+          })
           setIsAdmin(hasAdmin)
         }
       }

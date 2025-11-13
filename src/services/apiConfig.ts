@@ -3,8 +3,8 @@
 
 export const API_CONFIG = {
   // Base URL for all API calls
-  baseURL: 'https://seba.hanohost.net/backend',
-  // baseURL:'http://localhost:8000',
+  // baseURL: 'https://seba.hanohost.net/backend',
+  baseURL:'http://localhost:8000',
   
   // Default headers for all requests
   headers: {
@@ -51,6 +51,25 @@ export const API_CONFIG = {
     newsletterSubscribe: '/api/newsletter/subscribe',
     // Contact
     contactSend: '/api/contact/send',
+    // Shipping Info
+    shippingInfo: '/api/shipping-info',
+    // Returns Info
+    returnsInfo: '/api/returns-info',
+    // Privacy Info
+    privacyInfo: '/api/privacy-info',
+    // Terms Info
+    termsInfo: '/api/terms-info',
+    // Admin Dashboard
+    adminDashboardOverview: '/api/admin/dashboard/overview',
+    adminDashboardAnalytics: '/api/admin/dashboard/analytics',
+    // Pages content
+    pageShow: (slug: string) => `/api/pages/${slug}`,
+    pageUpsert: (slug: string) => `/api/pages/${slug}`,
+    // Chat
+    chatSend: '/api/chat/send',
+    chatThread: (sessionId: string) => `/api/chat/thread/${sessionId}`,
+    adminChatThreads: '/api/admin/chat/threads',
+    adminChatReply: '/api/admin/chat/reply',
     // Orders
     authOrders: '/api/customer/orders',
     authOrdersRecent: '/api/customer/orders/recent',
