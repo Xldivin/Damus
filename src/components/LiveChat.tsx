@@ -37,11 +37,6 @@ export function LiveChat() {
       return false
     }
   })()
-  
-  // Hide chat button for super admin and admin users
-  if (isSuperAdmin || isAdmin) {
-    return null
-  }
 
   // Initialize messages when chat opens
   useEffect(() => {
@@ -211,6 +206,12 @@ export function LiveChat() {
     }
   }
 
+  // Hide chat button for super admin and admin users
+  // This check must be AFTER all hooks are called
+  if (isSuperAdmin || isAdmin) {
+    return null
+  }
+
   // Always render the chat button when closed
   if (!isOpen) {
     return (
@@ -246,10 +247,6 @@ export function LiveChat() {
   }
 
   console.log('LiveChat render - isOpen:', isOpen, 'isMinimized:', isMinimized)
-
-  if (!isOpen) {
-    return null // This shouldn't happen, but just in case
-  }
 
   return (
     <div 

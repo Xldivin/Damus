@@ -267,16 +267,6 @@ export function SignupPage() {
                   </Label>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="subscribeNewsletter"
-                    checked={formData.subscribeNewsletter}
-                    onCheckedChange={(checked: string | boolean) => handleInputChange('subscribeNewsletter', checked)}
-                  />
-                  <Label htmlFor="subscribeNewsletter" className="text-sm">
-                    Subscribe to our newsletter for updates and exclusive offers
-                  </Label>
-                </div>
               </div>
 
               {/* Submit Button */}
