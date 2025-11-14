@@ -3,8 +3,8 @@
 
 export const API_CONFIG = {
   // Base URL for all API calls
-  // baseURL: 'https://seba.hanohost.net/backend',
-  baseURL:'http://localhost:8000',
+  baseURL: 'https://damus-be-test-1.onrender.com',
+  // baseURL:'http://localhost:8000',
   
   // Default headers for all requests
   headers: {
