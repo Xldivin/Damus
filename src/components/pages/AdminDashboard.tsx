@@ -4,21 +4,16 @@ import {
   Package, 
   Users, 
   ShoppingCart, 
-  TrendingUp, 
   DollarSign, 
   AlertTriangle,
   Plus,
   Search,
-  Filter,
-  MoreHorizontal,
   Edit,
   Trash2,
   Eye,
   X,
-  Star,
   MessageSquare,
   LayoutDashboard,
-  FileText,
   Menu,
   Tag
 } from 'lucide-react'
@@ -34,7 +29,6 @@ import { Textarea } from '../ui/textarea'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { ImageWithFallback } from '../figma/ImageWithFallback'
 import { useAppContext } from '../../context/AppContext'
-import { mockProducts } from '../../App'
 import { toast } from 'sonner'
 import { apiService } from '../../services/api'
 
@@ -749,10 +743,6 @@ export function AdminDashboard() {
     }
   }
   
-  const handleSaveOrder = () => {
-    toast.success('Order updated successfully!')
-    setEditOrderModal(false)
-  }
   
 
   // Use real data from API or fallback to mock data
@@ -766,11 +756,9 @@ export function AdminDashboard() {
   ]
 
   const categoryData = overviewData?.charts?.category_sales || [
-    { name: 'Laptops', value: 35, color: '#000000' },
-    { name: 'Audio', value: 25, color: '#666666' },
-    { name: 'Phones', value: 20, color: '#999999' },
-    { name: 'Gaming', value: 15, color: '#CCCCCC' },
-    { name: 'Other', value: 5, color: '#E5E5E5' }
+    { name: 'Clothes', value: 0, color: '#000000' },
+    { name: 'Shoes', value: 0, color: '#666666' },
+    { name: 'Retail', value: 0, color: '#999999' },
   ]
 
   const recentOrders = overviewData?.recent_orders || []
@@ -845,7 +833,7 @@ return (
     {/* Sidebar */}
     <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}>
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      <div className={`p-4 border-b border-gray-200 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
         {sidebarOpen && (
           <h2 className="text-lg font-bold">Admin Panel</h2>
         )}
@@ -853,7 +841,7 @@ return (
           variant="ghost"
           size="sm"
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="ml-auto"
+          className={sidebarOpen ? "ml-auto" : ""}
         >
           <Menu className="h-5 w-5" />
         </Button>
@@ -864,12 +852,17 @@ return (
         <div className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon
+            const isActive = activeTab === item.id
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  activeTab === item.id
+                className={`w-full flex items-center rounded-lg transition-colors ${
+                  sidebarOpen 
+                    ? 'gap-3 px-3 py-2.5' 
+                    : 'justify-center px-0 py-2.5'
+                } ${
+                  isActive
                     ? 'bg-black text-white'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
@@ -910,7 +903,7 @@ return (
                       <div>
                         <p className="text-sm text-gray-600">Total Revenue</p>
                         <p className="text-2xl font-bold">
-                          {isLoadingOverview ? '...' : `$${overviewData?.kpis?.revenue?.total || '0.00'}`}
+                          {isLoadingOverview ? '...' : `AED ${overviewData?.kpis?.revenue?.total || '0.00'}`}
                         </p>
                         <p className={`text-sm ${overviewData?.kpis?.revenue?.growth_direction === 'up' ? 'text-green-600' : 'text-red-600'}`}>
                           {isLoadingOverview ? '...' : `${overviewData?.kpis?.revenue?.growth_direction === 'up' ? '↗' : '↘'} ${Math.abs(overviewData?.kpis?.revenue?.growth || 0)}% from last month`}
@@ -1010,7 +1003,7 @@ return (
                           dataKey="value"
                           label={({ name, value }) => `${name} ${value}%`}
                         >
-                          {categoryData.map((entry, index) => (
+                          {categoryData.map((entry:any, index:any) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
@@ -1052,7 +1045,7 @@ return (
                               </Badge>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold">${order.total}</p>
+                              <p className="font-bold">AED {order.total}</p>
                               <p className="text-gray-600 text-sm">{order.date}</p>
                             </div>
                           </div>
@@ -1158,7 +1151,7 @@ return (
                       <Card className="border-gray-200">
                         <CardContent className="p-6">
                           <p className="text-sm text-gray-600 mb-2">Total Revenue</p>
-                          <p className="text-2xl font-bold">${analyticsData.summary.total_revenue}</p>
+                          <p className="text-2xl font-bold">AED {analyticsData.summary.total_revenue}</p>
                         </CardContent>
                       </Card>
                       <Card className="border-gray-200">
@@ -1170,14 +1163,14 @@ return (
                       <Card className="border-gray-200">
                         <CardContent className="p-6">
                           <p className="text-sm text-gray-600 mb-2">Avg Order Value</p>
-                          <p className="text-2xl font-bold">${analyticsData.summary.average_order_value}</p>
+                          <p className="text-2xl font-bold">AED {analyticsData.summary.average_order_value}</p>
                         </CardContent>
                       </Card>
                       <Card className="border-gray-200">
                         <CardContent className="p-6">
                           <p className="text-sm text-gray-600 mb-2">Best Month</p>
                           <p className="text-xl font-bold">{analyticsData.summary.best_month?.month || 'N/A'}</p>
-                          <p className="text-sm text-gray-600">${analyticsData.summary.best_month?.revenue?.toLocaleString() || '0'}</p>
+                          <p className="text-sm text-gray-600">AED {analyticsData.summary.best_month?.revenue?.toLocaleString() || '0'}</p>
                         </CardContent>
                       </Card>
                     </div>
@@ -1258,7 +1251,7 @@ return (
                             </div>
                           </TableCell>
                             <TableCell>{product.category?.name || 'Uncategorized'}</TableCell>
-                          <TableCell>${product.price}</TableCell>
+                          <TableCell>AED {product.price}</TableCell>
                           <TableCell>
                               <Badge className={product.in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
                                 {product.in_stock ? 'In Stock' : 'Out of Stock'}
@@ -1363,7 +1356,7 @@ return (
                           </TableCell>
                           <TableCell>{order.items?.length || 0} item(s)</TableCell>
                           <TableCell>
-                            {order.currency || '$'}{(Number(order.total_amount) || 0).toFixed(2)}
+                            {order.currency || 'AED'}{(Number(order.total_amount) || 0).toFixed(2)}
                           </TableCell>
                           <TableCell>
                             <Badge className={getStatusColor(order.status)}>
@@ -1459,7 +1452,7 @@ return (
                           <TableCell>{customer.phone || 'N/A'}</TableCell>
                           <TableCell>{customer.total_orders || 0}</TableCell>
                           <TableCell>
-                            ${(Number(customer.total_spent) || 0).toFixed(2)}
+                            AED {(Number(customer.total_spent) || 0).toFixed(2)}
                           </TableCell>
                           <TableCell>
                             <Badge className={
@@ -1623,7 +1616,7 @@ return (
     </div>
     
     {/* Add Product Modal */}
-    <Dialog open={addProductModal} onOpenChange={(open) => {
+    <Dialog open={addProductModal} onOpenChange={(open:any) => {
       setAddProductModal(open)
       if (!open) {
         // Clean up image previews when modal closes
@@ -2232,7 +2225,7 @@ return (
                 <Label htmlFor="edit-category">Category *</Label>
                 <Select 
                   value={editProductForm.category_id?.toString() || ''} 
-                  onValueChange={(value) => setEditProductForm({...editProductForm, category_id: parseInt(value)})}
+                  onValueChange={(value: string) => setEditProductForm({...editProductForm, category_id: parseInt(value)})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -2250,7 +2243,7 @@ return (
                 <Label htmlFor="edit-brand">Brand</Label>
                 <Select 
                   value={editProductForm.brand_id?.toString() || undefined} 
-                  onValueChange={(value) => setEditProductForm({...editProductForm, brand_id: value === 'none' ? null : parseInt(value)})}
+                  onValueChange={(value: string) => setEditProductForm({...editProductForm, brand_id: value === 'none' ? null : parseInt(value)})}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select brand" />
@@ -2547,7 +2540,7 @@ return (
               <Label htmlFor="order-status">Order Status *</Label>
               <Select 
                 value={editOrderForm.status || 'pending'} 
-                onValueChange={(value) => setEditOrderForm({...editOrderForm, status: value})}
+                onValueChange={(value: any) => setEditOrderForm({...editOrderForm, status: value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -2786,7 +2779,7 @@ return (
               <Label htmlFor="edit-customer-status">Status *</Label>
               <Select 
                 value={editCustomerForm.status || 'active'} 
-                onValueChange={(value) => setEditCustomerForm({...editCustomerForm, status: value})}
+                onValueChange={(value: any) => setEditCustomerForm({...editCustomerForm, status: value})}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />

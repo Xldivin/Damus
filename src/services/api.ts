@@ -363,7 +363,9 @@ export const apiService = {
       }
       return { messages: [] }
     },
-    async adminThreads(): Promise<{ threads: Array<{ sessionId: string; lastMessage?: any; unreadCount: number }> }> {
+    async adminThreads(): Promise<{
+      data: any; threads: Array<{ sessionId: string; lastMessage?: any; unreadCount: number }> 
+}> {
       const url = getApiUrl(API_CONFIG.endpoints.adminChatThreads)
       const response = await fetch(url, {
         method: 'GET',

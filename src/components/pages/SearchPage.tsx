@@ -392,10 +392,10 @@ export function SearchPage() {
                   {filteredProducts.map((product) => (
                     <Card 
                       key={product.id} 
-                      className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200"
+                      className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200 flex flex-col h-full"
                     >
-                      <CardContent className="p-0">
-                        <div className="aspect-square overflow-hidden rounded-t-lg relative">
+                      <CardContent className="p-0 flex flex-col h-full">
+                        <div className="aspect-square overflow-hidden rounded-t-lg relative flex-shrink-0">
                           <ImageWithFallback
                             src={product.image}
                             alt={product.name}
@@ -422,9 +422,9 @@ export function SearchPage() {
                             </svg>
                           </button>
                         </div>
-                        <div className="p-4" onClick={() => handleProductClick(product)}>
+                        <div className="p-4 flex flex-col flex-grow" onClick={() => handleProductClick(product)}>
                           <p className="text-sm text-gray-600 mb-1">{product.brand}</p>
-                          <h3 className="font-semibold mb-2" >
+                          <h3 className="font-semibold mb-2 line-clamp-2 min-h-[3rem]">
                             {highlightSearchTerm(product.name, searchQuery)}
                           </h3>
                           <div className="flex items-center mb-2">
@@ -440,7 +440,7 @@ export function SearchPage() {
                               ({product.reviews})
                             </span>
                           </div>
-                          <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center justify-between mb-3 mt-auto">
                             <div className="flex items-center space-x-2">
                               <span className="font-bold text-lg">${product.price}</span>
                               {product.originalPrice && (
@@ -451,7 +451,7 @@ export function SearchPage() {
                             </div>
                           </div>
                           <Button 
-                            className="w-full bg-black text-white hover:bg-gray-800"
+                            className="w-full bg-black text-white hover:bg-gray-800 flex-shrink-0"
                             disabled={!product.inStock}
                             onClick={(e: { stopPropagation: () => void }) => {
                               e.stopPropagation()

@@ -10,6 +10,7 @@ import { useAppContext } from '../../context/AppContext'
 import { toast } from 'sonner'
 import { apiService } from '../../services/api'
 import { preloadCriticalImages } from '../../utils/imagePreloader'
+import { homepageHero } from '../../assets'
 
 export function HomePage() {
   const navigate = useNavigate()
@@ -109,20 +110,27 @@ export function HomePage() {
 
   return (
     <div className="space-y-16">
-      {/* Hero - Minimal black & white */}
-      <section className="bg-white text-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+      {/* Hero - Background image with overlay */}
+      <section 
+        className="relative bg-cover bg-center bg-no-repeat text-white min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] flex items-center"
+        style={{ backgroundImage: `url(${homepageHero})` }}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/50"></div>
+        
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24 w-full">
           <div className="max-w-4xl">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white">
               Elevate Your Everyday Style
             </h1>
-            <p className="text-lg sm:text-xl text-gray-700 mb-6 sm:mb-8">
+            <p className="text-lg sm:text-xl text-gray-100 mb-6 sm:mb-8">
               Curated fashion with simple, timeless design.
             </p>
             <div className="flex flex-col sm:flex-row sm:space-x-4 sm:space-y-0 space-y-4">
               <Button
                 size="lg"
-                className="bg-black text-white hover:bg-gray-800"
+                className="bg-white text-black hover:bg-gray-100"
                 onClick={() => navigate('/products')}
               >
                 Shop Now
@@ -131,7 +139,7 @@ export function HomePage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-black text-black hover:bg-black hover:text-white"
+                className="border-white text-black hover:bg-white hover:text-black"
                 onClick={() => navigate('/products')}
               >
                 Browse All
@@ -141,16 +149,16 @@ export function HomePage() {
             <div className="mt-8 sm:mt-10 lg:mt-12">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold">{stats.numBrands}</div>
-                  <div className="text-sm text-gray-700 mt-1">Brands</div>
+                  <div className="text-3xl sm:text-4xl font-bold text-white">{stats.numBrands}</div>
+                  <div className="text-sm text-gray-200 mt-1">Brands</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold">{stats.numProducts}</div>
-                  <div className="text-sm text-gray-700 mt-1">Products</div>
+                  <div className="text-3xl sm:text-4xl font-bold text-white">{stats.numProducts}</div>
+                  <div className="text-sm text-gray-200 mt-1">Products</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold">{`${(stats.numCustomers/1000).toFixed(0)}k+`}</div>
-                  <div className="text-sm text-gray-700 mt-1">Customers</div>
+                  <div className="text-3xl sm:text-4xl font-bold text-white">{`${(stats.numCustomers/1000).toFixed(0)}k+`}</div>
+                  <div className="text-sm text-gray-200 mt-1">Customers</div>
                 </div>
               </div>
             </div>
@@ -267,10 +275,10 @@ export function HomePage() {
           {bestSellers.map((product, index) => (
             <Card 
               key={`homepage-product-${product.id || index}`} 
-              className="group hover:shadow-lg transition-all duration-300 border-black cursor-pointer relative"
+              className="group hover:shadow-lg transition-all duration-300 border-black cursor-pointer relative flex flex-col h-full"
             >
-              <CardContent className="p-0">
-                 <div className="h-80 overflow-hidden rounded-t-lg relative">
+              <CardContent className="p-0 flex flex-col h-full">
+                 <div className="h-80 overflow-hidden rounded-t-lg relative flex-shrink-0">
                    <ImageWithFallback
                        src={product.primary_image}
                      alt={product.name}
@@ -281,10 +289,10 @@ export function HomePage() {
                      lazy={true}
                    />
                  </div>
-                <div className="p-4">
-                  <div onClick={() => handleProductClick(product)} className="cursor-pointer">
-                    <h3 className="font-semibold mb-2">{product.name}</h3>
-                    <div className="flex items-center justify-between">
+                <div className="p-4 flex flex-col flex-grow">
+                  <div onClick={() => handleProductClick(product)} className="cursor-pointer flex-grow">
+                    <h3 className="font-semibold mb-2 line-clamp-2 min-h-[3rem]">{product.name}</h3>
+                    <div className="flex items-center justify-between mt-auto">
                         <span className="font-bold text-lg">AED {product.effective_price}</span>
                         {product.original_price && (
                           <span className="text-gray-500 line-through text-sm">AED {product.original_price}</span>
@@ -293,7 +301,7 @@ export function HomePage() {
                   </div>
                   
                   {/* Quick Add Component - Show on hover */}
-                  <div className="mt-4 border-t pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="mt-4 border-t pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
                     <QuickAdd 
                       product={product}
                       onAddToCart={(product, size) => {

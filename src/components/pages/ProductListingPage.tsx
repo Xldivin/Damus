@@ -548,14 +548,14 @@ export function ProductListingPage() {
                         </svg>
                       </button>
                     </div>
-                    <div className="p-4">
-                      <div onClick={() => handleProductClick(product)} className="cursor-pointer">
+                    <div className="p-4 flex flex-col flex-grow">
+                      <div onClick={() => handleProductClick(product)} className="cursor-pointer flex-grow flex flex-col">
                         <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p>
-                        <h3 className="font-semibold mb-2">
+                        <h3 className="font-semibold mb-2 line-clamp-2 min-h-[3rem]">
                           {product.name}
                         </h3>
 
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-3 mt-auto">
                           <div className="flex items-center space-x-2">
                             <span className="font-bold text-lg">AED {product.effective_price}</span>
                             {product.original_price && (
@@ -566,7 +566,7 @@ export function ProductListingPage() {
                       </div>
                       
                       {/* Quick Add Component - Show on hover */}
-                      <div className="mt-4 border-t pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="mt-4 border-t pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
                         <QuickAdd 
                           product={product}
                           onAddToCart={(product, size) => {
