@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
+import { AnnouncementBar } from './components/AnnouncementBar'
 import { HomePage } from './components/pages/HomePage'
 import { ProductListingPage } from './components/pages/ProductListingPage'
 import { ProductDetailPage } from './components/pages/ProductDetailPage'
@@ -248,6 +249,7 @@ export default function App() {
         <Router>
           <ScrollToTop />
           <div className="min-h-screen bg-white flex flex-col">
+            <AnnouncementBar />
             <Header />
             <main className="flex-1">
               <Routes>

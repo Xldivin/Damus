@@ -149,10 +149,6 @@ export function HomePage() {
             <div className="mt-8 sm:mt-10 lg:mt-12">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold text-white">{stats.numBrands}</div>
-                  <div className="text-sm text-gray-200 mt-1">Brands</div>
-                </div>
-                <div className="text-center">
                   <div className="text-3xl sm:text-4xl font-bold text-white">{stats.numProducts}</div>
                   <div className="text-sm text-gray-200 mt-1">Products</div>
                 </div>

@@ -758,8 +758,6 @@ export function CustomerDashboard() {
           </Card>
         </TabsContent>
 
-        
-
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
 

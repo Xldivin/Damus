@@ -22,19 +22,19 @@ export function ProductListingPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState('featured')
   const [priceRange, setPriceRange] = useState([0, 3000])
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
+  // const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [minRating, setMinRating] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
   const [showPricePanel, setShowPricePanel] = useState(false)
-  const [showBrandsPanel, setShowBrandsPanel] = useState(false)
+  // const [showBrandsPanel, setShowBrandsPanel] = useState(false)
   const [showCategoriesPanel, setShowCategoriesPanel] = useState(false)
   const [showRatingPanel, setShowRatingPanel] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   
   // API state
   const [products, setProducts] = useState<any[]>([])
-  const [brands, setBrands] = useState<string[]>([])
+  // const [brands, setBrands] = useState<string[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,8 +68,8 @@ export function ProductListingPage() {
         setCategories(categoriesData.map(cat => cat.name))
         
         // Extract unique brands from products
-        const uniqueBrands = [...new Set(productsData.map(p => p.brand?.name).filter(Boolean))]
-        setBrands(uniqueBrands)
+        // const uniqueBrands = [...new Set(productsData.map(p => p.brand?.name).filter(Boolean))]
+        // setBrands(uniqueBrands)
       } catch (err) {
         console.error('Failed to load products data:', err)
         setError('Failed to load products. Please check your connection and try again.')
@@ -94,15 +94,15 @@ export function ProductListingPage() {
 
   const filteredProducts = products.filter(product => {
     const matchesPrice = product.effective_price >= priceRange[0] && product.effective_price <= priceRange[1]
-    const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(product.brand?.name)
+    // const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(product.brand?.name)
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category?.name)
     const matchesRating = product.average_rating >= minRating
     const matchesSearch = searchQuery === '' || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      // product.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     
-    return matchesPrice && matchesBrand && matchesCategory && matchesRating && matchesSearch
+    return matchesPrice && /* matchesBrand && */ matchesCategory && matchesRating && matchesSearch
   })
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -140,13 +140,13 @@ export function ProductListingPage() {
     }
   }
 
-  const toggleBrand = (brand: string) => {
-    setSelectedBrands(prev =>
-      prev.includes(brand)
-        ? prev.filter(b => b !== brand)
-        : [...prev, brand]
-    )
-  }
+  // const toggleBrand = (brand: string) => {
+  //   setSelectedBrands(prev =>
+  //     prev.includes(brand)
+  //       ? prev.filter(b => b !== brand)
+  //       : [...prev, brand]
+  //   )
+  // }
 
   const toggleCategory = (category: string) => {
     setSelectedCategories(prev =>
@@ -158,7 +158,7 @@ export function ProductListingPage() {
 
   const clearFilters = () => {
     setPriceRange([0, 3000])
-    setSelectedBrands([])
+    // setSelectedBrands([])
     setSelectedCategories([])
     setMinRating(0)
   }
@@ -264,7 +264,7 @@ export function ProductListingPage() {
       </div>
 
       {/* Brands */}
-      <div className="space-y-3">
+      {/* <div className="space-y-3">
         <h4 className="font-medium">Brands</h4>
         <div className="space-y-2">
           {brands.map(brand => (
@@ -280,7 +280,7 @@ export function ProductListingPage() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Rating */}
       <div className="space-y-3">
@@ -323,7 +323,7 @@ export function ProductListingPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               type="text"
-              placeholder="Search products, brands, categories..."
+              placeholder="Search products, categories..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 border-black focus:border-black"
@@ -383,13 +383,13 @@ export function ProductListingPage() {
           {selectedCategories.map(c => (
             <span key={`cat-${c}`} className="px-3 py-1 border border-black rounded-full text-sm">{c}</span>
           ))}
-          {selectedBrands.map(b => (
+          {/* {selectedBrands.map(b => (
             <span key={`brand-${b}`} className="px-3 py-1 border border-black rounded-full text-sm">{b}</span>
-          ))}
+          ))} */}
           {minRating > 0 ? (
             <span className="px-3 py-1 border border-black rounded-full text-sm">{minRating}★ & up</span>
           ) : null}
-          {(priceRange[0] !== 0 || priceRange[1] !== 3000 || selectedCategories.length || selectedBrands.length || minRating > 0) && (
+          {(priceRange[0] !== 0 || priceRange[1] !== 3000 || selectedCategories.length || /* selectedBrands.length || */ minRating > 0) && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>Clear All</Button>
           )}
         </div>
@@ -399,9 +399,9 @@ export function ProductListingPage() {
             <button onClick={() => setShowPricePanel(!showPricePanel)} className="px-3 py-2 border border-black rounded-md text-sm inline-flex items-center">
               Price <ChevronDown className="h-4 w-4 ml-2" />
             </button>
-            <button onClick={() => setShowBrandsPanel(!showBrandsPanel)} className="px-3 py-2 border border-black rounded-md text-sm inline-flex items-center">
+            {/* <button onClick={() => setShowBrandsPanel(!showBrandsPanel)} className="px-3 py-2 border border-black rounded-md text-sm inline-flex items-center">
               Brands <ChevronDown className="h-4 w-4 ml-2" />
-            </button>
+            </button> */}
             <button onClick={() => setShowCategoriesPanel(!showCategoriesPanel)} className="px-3 py-2 border border-black rounded-md text-sm inline-flex items-center">
               Categories <ChevronDown className="h-4 w-4 ml-2" />
             </button>
@@ -419,7 +419,7 @@ export function ProductListingPage() {
               </div>
             </div>
           )}
-          {showBrandsPanel && (
+          {/* {showBrandsPanel && (
             <div className="mt-3 border border-black rounded-md p-4 max-w-md">
               <div className="space-y-2">
                 {brands.map(brand => (
@@ -430,7 +430,7 @@ export function ProductListingPage() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
           {showCategoriesPanel && (
             <div className="mt-3 border border-black rounded-md p-4 max-w-md">
               <div className="space-y-2">
@@ -550,7 +550,7 @@ export function ProductListingPage() {
                     </div>
                     <div className="p-4 flex flex-col flex-grow">
                       <div onClick={() => handleProductClick(product)} className="cursor-pointer flex-grow flex flex-col">
-                        <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p>
+                        {/* <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p> */}
                         <h3 className="font-semibold mb-2 line-clamp-2 min-h-[3rem]">
                           {product.name}
                         </h3>
@@ -604,7 +604,7 @@ export function ProductListingPage() {
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p>
+                            {/* <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p> */}
                             <h3 className="text-xl font-semibold mb-2">
                               {product.name}
                             </h3>

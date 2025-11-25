@@ -142,7 +142,7 @@ export function Header() {
             <div className="flex items-center">
               <button 
                 onClick={() => navigate('/')}
-                className="text-xl sm:text-2xl font-bold text-black hover:text-gray-600 transition-colors"
+                className="text-xl sm:text-3xl font-bold text-black hover:text-gray-600 transition-colors"
               >
                 Rovin
               </button>

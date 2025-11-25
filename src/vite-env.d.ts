@@ -42,3 +42,12 @@ declare module '*.bmp' {
 }
 
 
+
+
+
+
+
+
+
+
+
