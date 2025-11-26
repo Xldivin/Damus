@@ -3,8 +3,11 @@
 
 export const API_CONFIG = {
   // Base URL for all API calls
-   baseURL: 'https://damus-be-test-1.onrender.com',
-  // baseURL:'http://localhost:8000',
+  // Use localhost in development, Render URL in all other environments
+  baseURL:
+    typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:8000'
+      : 'https://damus-be-test-1.onrender.com',
   
   // Default headers for all requests
   headers: {
