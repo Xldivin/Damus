@@ -7,7 +7,7 @@ export const API_CONFIG = {
   baseURL:
     typeof window !== 'undefined' && window.location.hostname === 'localhost'
       ? 'http://localhost:8000'
-      : 'https://damus-be-test-1.onrender.com',
+      : 'https://damus-be-test.onrender.com',
   
   // Default headers for all requests
   headers: {
