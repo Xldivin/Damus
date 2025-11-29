@@ -699,11 +699,11 @@ export function AdminDashboard() {
         is_featured: newProductForm.is_featured,
         is_digital: newProductForm.is_digital,
         c_sizes: selectedSizes.length > 0 ? selectedSizes : undefined,
-        // images: productImages.length > 0 ? productImages.map(img => ({
-        //   url: img.url,
-        //   alt_text: img.alt_text || newProductForm.name,
-        //   is_primary: img.is_primary,
-        // })) : undefined,
+        images: productImages.length > 0 ? productImages.map(img => ({
+          url: img.url,
+          alt_text: img.alt_text || newProductForm.name,
+          is_primary: img.is_primary,
+        })) : undefined,
       }
       
       await apiService.adminProducts.create(productData)
@@ -1952,8 +1952,8 @@ return (
             </div>
           </div>
           
-          {/* Product Images - Commented out as not implemented well */}
-          {false && (
+          {/* Product Images */}
+          {true && (
             <div className="space-y-2">
               <Label>Product Images</Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
