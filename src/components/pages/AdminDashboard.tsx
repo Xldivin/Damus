@@ -2033,7 +2033,7 @@ return (
                             }
                           }}
                           className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          disabled={isSubmittingProduct}
+                          disabled={isSubmittingProduct || uploadingImages}
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -2052,7 +2052,7 @@ return (
                             setProductImages(newImages)
                           }}
                           className="absolute bottom-1 right-1 bg-gray-800 text-white text-xs px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                          disabled={isSubmittingProduct}
+                          disabled={isSubmittingProduct || uploadingImages}
                         >
                           Set Primary
                         </button>
@@ -2068,16 +2068,21 @@ return (
             <Button 
               variant="outline" 
               onClick={() => setAddProductModal(false)}
-              disabled={isSubmittingProduct}
+              disabled={isSubmittingProduct || uploadingImages}
             >
               Cancel
             </Button>
             <Button 
               className="bg-black text-white hover:bg-gray-800" 
               onClick={handleAddProduct}
-              disabled={isSubmittingProduct}
+              disabled={isSubmittingProduct || uploadingImages}
             >
-              {isSubmittingProduct ? (
+              {uploadingImages ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+                  Uploading Images...
+                </>
+              ) : isSubmittingProduct ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
                   Adding Product...
