@@ -49,7 +49,7 @@ export function ProductListingPage() {
         setError(null)
         
         const [productsData, categoriesData] = await Promise.all([
-          apiService.products.getAllProducts(),
+          apiService.products.getAllProducts(true), // Include inactive products to get all products
           apiService.categories.getAllCategories()
         ])
         // Check wishlist status per product (auth vs session)
@@ -65,12 +65,14 @@ export function ProductListingPage() {
           // ignore wishlist check errors gracefully
         }
         
-        setProducts(productsData)
+        // Filter to only show active products (even if we fetched all)
+        const activeProducts = productsData.filter((p: any) => p.is_active !== false)
+        setProducts(activeProducts)
         setCategories(categoriesData.map(cat => cat.name))
         
-        // Calculate max price from products and update price range
-        if (productsData.length > 0) {
-          const calculatedMaxPrice = Math.max(...productsData.map((p: any) => p.effective_price || p.price || 0))
+        // Calculate max price from active products and update price range
+        if (activeProducts.length > 0) {
+          const calculatedMaxPrice = Math.max(...activeProducts.map((p: any) => p.effective_price || p.price || 0))
           const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 100) * 100 // Round up to nearest 100
           setMaxPrice(Math.max(roundedMaxPrice, 1000)) // At least 1000
           setPriceRange([0, Math.max(roundedMaxPrice, 1000)]) // Reset to show all products
@@ -165,12 +167,36 @@ export function ProductListingPage() {
     )
   }
 
-  const clearFilters = () => {
+  const clearFilters = async () => {
+    // Reset all filter states
     setPriceRange([0, maxPrice]) // Reset to calculated max price to show all products
     // setSelectedBrands([])
     setSelectedCategories([])
     setMinRating(0)
     setSearchQuery('') // Clear search query to show all products
+    
+    // Clear URL query parameters
+    navigate('/products', { replace: true })
+    
+    // Reload products to ensure we have all active products
+    try {
+      setLoading(true)
+      const productsData = await apiService.products.getAllProducts(true)
+      const activeProducts = productsData.filter((p: any) => p.is_active !== false)
+      setProducts(activeProducts)
+      
+      // Recalculate max price
+      if (activeProducts.length > 0) {
+        const calculatedMaxPrice = Math.max(...activeProducts.map((p: any) => p.effective_price || p.price || 0))
+        const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 100) * 100
+        setMaxPrice(Math.max(roundedMaxPrice, 1000))
+        setPriceRange([0, Math.max(roundedMaxPrice, 1000)])
+      }
+    } catch (err) {
+      console.error('Failed to reload products:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleWishlistClick = async (e: any, productId: number | string) => {

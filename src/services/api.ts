@@ -206,8 +206,11 @@ async function apiRequest<T>(
 // Product API functions with optimized caching
 export const productApi = {
   // Get all products with long cache TTL
-  async getAllProducts(): Promise<any[]> {
-    return apiRequest<any[]>(API_CONFIG.endpoints.products, {}, true)
+  async getAllProducts(includeInactive: boolean = false): Promise<any[]> {
+    const url = includeInactive 
+      ? `${API_CONFIG.endpoints.products}?include_inactive=true`
+      : API_CONFIG.endpoints.products
+    return apiRequest<any[]>(url, {}, true)
   },
   pages: {
     async get(slug: string): Promise<{ success: boolean; data: any }> {
