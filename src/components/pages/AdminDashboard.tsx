@@ -196,6 +196,7 @@ export function AdminDashboard() {
     is_digital: false,
   })
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [editSelectedSizes, setEditSelectedSizes] = useState<string[]>([])
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   
@@ -333,6 +334,8 @@ export function AdminDashboard() {
         is_featured: fullProduct.is_featured ?? false,
         is_digital: fullProduct.is_digital ?? false,
       })
+      // Load existing sizes
+      setEditSelectedSizes(Array.isArray(fullProduct.c_sizes) ? fullProduct.c_sizes : [])
       setEditProductModal(true)
     } catch (error) {
       // Fallback to product from table if API fails
@@ -354,6 +357,8 @@ export function AdminDashboard() {
         is_featured: product.is_featured ?? false,
         is_digital: product.is_digital ?? false,
       })
+      // Load existing sizes
+      setEditSelectedSizes(Array.isArray(product.c_sizes) ? product.c_sizes : [])
       setEditProductModal(true)
     }
   }
@@ -597,11 +602,13 @@ export function AdminDashboard() {
         is_active: editProductForm.is_active,
         is_featured: editProductForm.is_featured,
         is_digital: editProductForm.is_digital,
+        c_sizes: editSelectedSizes.length > 0 ? editSelectedSizes : undefined,
       }
       
       await apiService.adminProducts.update(selectedProduct.id, productData)
       toast.success('Product updated successfully!')
       setEditProductModal(false)
+      setEditSelectedSizes([]) // Reset sizes after successful update
       
       // Reload products
       const productsResponse = await apiService.adminProducts.getAll({ include_inactive: true, per_page: 100 })
@@ -2328,6 +2335,76 @@ return (
               </div>
             </div>
             
+            {/* Size Selection - Show based on category */}
+            {(() => {
+              const selectedCategory = categories.find(c => c.id === editProductForm.category_id)
+              const categoryName = selectedCategory?.name?.toLowerCase() || ''
+              const isShoes = categoryName.includes('shoe')
+              const isClothes = categoryName.includes('cloth') || categoryName.includes('apparel') || categoryName.includes('fashion')
+              return isShoes || isClothes
+            })() && (
+              <div className="space-y-2">
+                <Label>Select Sizes</Label>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    const selectedCategory = categories.find(c => c.id === editProductForm.category_id)
+                    const categoryName = selectedCategory?.name?.toLowerCase() || ''
+                    return categoryName.includes('shoe')
+                  })() ? (
+                    // Shoe sizes (numeric)
+                    Array.from({ length: 20 }, (_, i) => {
+                      const size = (35 + i).toString() // Sizes from 35 to 54
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => {
+                            setEditSelectedSizes(prev => 
+                              prev.includes(size) 
+                                ? prev.filter(s => s !== size)
+                                : [...prev, size]
+                            )
+                          }}
+                          className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                            editSelectedSizes.includes(size)
+                              ? 'bg-black text-white border-black'
+                              : 'bg-white text-black border-gray-300 hover:border-black'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      )
+                    })
+                  ) : (
+                    // Clothes sizes (XS, S, M, L, XL, XXL)
+                    ['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(size => (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => {
+                          setEditSelectedSizes(prev => 
+                            prev.includes(size) 
+                              ? prev.filter(s => s !== size)
+                              : [...prev, size]
+                          )
+                        }}
+                        className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                          editSelectedSizes.includes(size)
+                            ? 'bg-black text-white border-black'
+                            : 'bg-white text-black border-gray-300 hover:border-black'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))
+                  )}
+                </div>
+                {editSelectedSizes.length > 0 && (
+                  <p className="text-sm text-gray-600">Selected: {editSelectedSizes.join(', ')}</p>
+                )}
+              </div>
+            )}
+            
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
                 <input
@@ -2362,7 +2439,10 @@ return (
             </div>
             
             <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setEditProductModal(false)}>
+              <Button variant="outline" onClick={() => {
+                setEditProductModal(false)
+                setEditSelectedSizes([]) // Reset sizes when closing
+              }}>
                 Cancel
               </Button>
               <Button 
