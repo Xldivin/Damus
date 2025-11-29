@@ -21,7 +21,8 @@ export function ProductListingPage() {
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState('featured')
-  const [priceRange, setPriceRange] = useState([0, 3000])
+  const [maxPrice, setMaxPrice] = useState(10000) // Default max price, will be calculated from products
+  const [priceRange, setPriceRange] = useState([0, 10000])
   // const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [minRating, setMinRating] = useState(0)
@@ -66,6 +67,14 @@ export function ProductListingPage() {
         
         setProducts(productsData)
         setCategories(categoriesData.map(cat => cat.name))
+        
+        // Calculate max price from products and update price range
+        if (productsData.length > 0) {
+          const calculatedMaxPrice = Math.max(...productsData.map((p: any) => p.effective_price || p.price || 0))
+          const roundedMaxPrice = Math.ceil(calculatedMaxPrice / 100) * 100 // Round up to nearest 100
+          setMaxPrice(Math.max(roundedMaxPrice, 1000)) // At least 1000
+          setPriceRange([0, Math.max(roundedMaxPrice, 1000)]) // Reset to show all products
+        }
         
         // Extract unique brands from products
         // const uniqueBrands = [...new Set(productsData.map(p => p.brand?.name).filter(Boolean))]
@@ -157,7 +166,7 @@ export function ProductListingPage() {
   }
 
   const clearFilters = () => {
-    setPriceRange([0, 3000])
+    setPriceRange([0, maxPrice]) // Reset to calculated max price to show all products
     // setSelectedBrands([])
     setSelectedCategories([])
     setMinRating(0)
@@ -234,7 +243,7 @@ export function ProductListingPage() {
           <Slider
             value={priceRange}
             onValueChange={setPriceRange}
-            max={3000}
+            max={maxPrice}
             step={50}
             className="w-full"
           />
@@ -378,7 +387,7 @@ export function ProductListingPage() {
         </div>
         {/* Active filters chips */}
         <div className="mt-4 flex flex-wrap gap-2">
-          {priceRange[0] !== 0 || priceRange[1] !== 3000 ? (
+          {priceRange[0] !== 0 || priceRange[1] !== maxPrice ? (
             <span className="px-3 py-1 border border-black rounded-full text-sm">{priceRange[0]} - {priceRange[1]}</span>
           ) : null}
           {selectedCategories.map(c => (
@@ -390,7 +399,7 @@ export function ProductListingPage() {
           {minRating > 0 ? (
             <span className="px-3 py-1 border border-black rounded-full text-sm">{minRating}★ & up</span>
           ) : null}
-          {(priceRange[0] !== 0 || priceRange[1] !== 3000 || selectedCategories.length || /* selectedBrands.length || */ minRating > 0) && (
+          {(priceRange[0] !== 0 || priceRange[1] !== maxPrice || selectedCategories.length || /* selectedBrands.length || */ minRating > 0) && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>Clear All</Button>
           )}
         </div>
@@ -413,7 +422,7 @@ export function ProductListingPage() {
           {showPricePanel && (
             <div className="mt-3 border border-black rounded-md p-4 max-w-xl">
               <h4 className="font-medium mb-3">Price Range</h4>
-              <Slider value={priceRange} onValueChange={setPriceRange} max={3000} step={50} className="w-full" />
+              <Slider value={priceRange} onValueChange={setPriceRange} max={maxPrice} step={50} className="w-full" />
               <div className="flex justify-between text-sm text-gray-600 mt-2">
                 <span>AED {priceRange[0]}</span>
                 <span>AED {priceRange[1]}</span>
