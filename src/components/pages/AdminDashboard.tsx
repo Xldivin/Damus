@@ -154,7 +154,6 @@ export function AdminDashboard() {
   // Products state
   const [products, setProducts] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
-  const [brands, setBrands] = useState<any[]>([])
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -187,7 +186,6 @@ export function AdminDashboard() {
     cost_price: '',
     category_id: '',
     subcategory_id: '',
-    brand_id: '',
     stock_quantity: '',
     min_stock_level: '5',
     weight: '',
@@ -200,13 +198,10 @@ export function AdminDashboard() {
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   
-  // Autocomplete states for Category and Brand
+  // Autocomplete states for Category
   const [categoryInput, setCategoryInput] = useState('')
-  const [brandInput, setBrandInput] = useState('')
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false)
-  const [showBrandSuggestions, setShowBrandSuggestions] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
-  const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null)
   
   // Product images state
   const [productImages, setProductImages] = useState<Array<{
@@ -229,7 +224,6 @@ export function AdminDashboard() {
           ])
           setProducts(productsResponse.data || [])
           setCategories(filterOptions.categories || [])
-          setBrands(filterOptions.brands || [])
         } catch (error) {
           console.error('Failed to load products:', error)
           toast.error('Failed to load products')
@@ -661,27 +655,6 @@ export function AdminDashboard() {
         }
       }
       
-      // Find or create brand (if provided)
-      let brandId: number | undefined
-      if (brandInput.trim()) {
-        const existingBrand = brands.find(b => b.name.toLowerCase() === brandInput.toLowerCase())
-        if (existingBrand) {
-          brandId = existingBrand.id
-        } else {
-          // Create new brand via API
-          try {
-            const brandResponse = await apiService.adminBrands.create({ name: brandInput })
-            brandId = brandResponse.id || brandResponse.data?.id
-            // Reload brands
-            const filterOptions = await apiService.adminProducts.getFilterOptions()
-            setBrands(filterOptions.brands || [])
-          } catch (error: any) {
-            toast.error('Failed to create brand. Please try again.')
-            return
-          }
-        }
-      }
-      
       const productData = {
         name: newProductForm.name,
         description: newProductForm.description,
@@ -691,7 +664,6 @@ export function AdminDashboard() {
         cost_price: newProductForm.cost_price ? parseFloat(newProductForm.cost_price) : undefined,
         category_id: categoryId,
         subcategory_id: newProductForm.subcategory_id ? parseInt(newProductForm.subcategory_id) : undefined,
-        brand_id: brandId,
         stock_quantity: parseInt(newProductForm.stock_quantity),
         min_stock_level: newProductForm.min_stock_level ? parseInt(newProductForm.min_stock_level) : 5,
         weight: newProductForm.weight ? parseFloat(newProductForm.weight) : undefined,
@@ -720,7 +692,6 @@ export function AdminDashboard() {
         cost_price: '',
         category_id: '',
         subcategory_id: '',
-        brand_id: '',
         stock_quantity: '',
         min_stock_level: '5',
         weight: '',
@@ -729,9 +700,7 @@ export function AdminDashboard() {
         is_digital: false,
       })
       setCategoryInput('')
-      setBrandInput('')
       setSelectedCategoryId(null)
-      setSelectedBrandId(null)
       setSelectedSizes([]) // Reset selected sizes
       
       // Clean up image previews
@@ -1637,9 +1606,7 @@ return (
         })
         setProductImages([])
         setCategoryInput('')
-        setBrandInput('')
         setSelectedCategoryId(null)
-        setSelectedBrandId(null)
       }
     }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -1718,7 +1685,7 @@ return (
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {/* Category Autocomplete */}
             <div className="space-y-2">
               <Label htmlFor="categorySuggest">Category *</Label>
@@ -1769,55 +1736,6 @@ return (
               </div>
             </div>
             
-            {/* Brand Autocomplete */}
-            <div className="space-y-2">
-              <Label htmlFor="brandSuggest">Brand</Label>
-              <div className="relative">
-                <Input
-                  id="brandSuggest"
-                  value={brandInput}
-                  onChange={(e) => {
-                    setBrandInput(e.target.value)
-                    setShowBrandSuggestions(true)
-                    setSelectedBrandId(null)
-                  }}
-                  onFocus={() => setShowBrandSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowBrandSuggestions(false), 200)}
-                  placeholder="Enter or select brand"
-                  className="h-10 sm:h-11 text-sm sm:text-base"
-                  autoComplete="off"
-                />
-                {/* Enhanced suggestions dropdown */}
-                {brandInput && showBrandSuggestions && (
-                  <div className="absolute z-[9999] mt-1 sm:mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-40 sm:max-h-48 overflow-auto">
-                    {brands
-                      .filter(b => (b.name || '').toLowerCase().includes(brandInput.toLowerCase()))
-                      .slice(0, 6)
-                      .map(b => (
-                        <button
-                          key={b.id}
-                          type="button"
-                          onClick={() => {
-                            setBrandInput(b.name)
-                            setSelectedBrandId(b.id)
-                            setShowBrandSuggestions(false)
-                          }}
-                          className="w-full text-left px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 sm:gap-3 transition-colors"
-                        >
-                          <Tag className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
-                          <span className="text-xs sm:text-sm">{b.name}</span>
-                        </button>
-                      ))}
-                    {brands.filter(b => (b.name || '').toLowerCase().includes(brandInput.toLowerCase())).length === 0 && brandInput && (
-                      <div className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm flex items-center gap-2 sm:gap-3 text-slate-600">
-                        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span className="truncate">No matches found for "{brandInput}". Will create new brand.</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
             <div className="space-y-2">
               <Label htmlFor="weight">Weight (kg)</Label>
               <Input
