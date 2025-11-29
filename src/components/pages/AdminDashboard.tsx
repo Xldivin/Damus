@@ -195,6 +195,7 @@ export function AdminDashboard() {
     is_featured: false,
     is_digital: false,
   })
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
   const [isSubmittingProduct, setIsSubmittingProduct] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   
@@ -690,6 +691,7 @@ export function AdminDashboard() {
         is_active: newProductForm.is_active,
         is_featured: newProductForm.is_featured,
         is_digital: newProductForm.is_digital,
+        c_sizes: selectedSizes.length > 0 ? selectedSizes : undefined,
         // images: productImages.length > 0 ? productImages.map(img => ({
         //   url: img.url,
         //   alt_text: img.alt_text || newProductForm.name,
@@ -723,6 +725,7 @@ export function AdminDashboard() {
       setBrandInput('')
       setSelectedCategoryId(null)
       setSelectedBrandId(null)
+      setSelectedSizes([]) // Reset selected sizes
       
       // Clean up image previews
       productImages.forEach(img => {
@@ -1843,6 +1846,71 @@ return (
               />
             </div>
           </div>
+          
+          {/* Size Selection - Show based on category */}
+          {(() => {
+            const categoryLower = categoryInput.toLowerCase()
+            const isShoes = categoryLower.includes('shoe')
+            const isClothes = categoryLower.includes('cloth') || categoryLower.includes('apparel') || categoryLower.includes('fashion')
+            return isShoes || isClothes
+          })() && (
+            <div className="space-y-2">
+              <Label>Select Sizes</Label>
+              <div className="flex flex-wrap gap-2">
+                {categoryInput.toLowerCase().includes('shoe') ? (
+                  // Shoe sizes (numeric)
+                  Array.from({ length: 20 }, (_, i) => {
+                    const size = (35 + i).toString() // Sizes from 35 to 54
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => {
+                          setSelectedSizes(prev => 
+                            prev.includes(size) 
+                              ? prev.filter(s => s !== size)
+                              : [...prev, size]
+                          )
+                        }}
+                        className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                          selectedSizes.includes(size)
+                            ? 'bg-black text-white border-black'
+                            : 'bg-white text-black border-gray-300 hover:border-black'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    )
+                  })
+                ) : (
+                  // Clothes sizes (XS, S, M, L, XL, XXL)
+                  ['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(size => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSizes(prev => 
+                          prev.includes(size) 
+                            ? prev.filter(s => s !== size)
+                            : [...prev, size]
+                        )
+                      }}
+                      className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
+                        selectedSizes.includes(size)
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-black border-gray-300 hover:border-black'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))
+                )}
+              </div>
+              {selectedSizes.length > 0 && (
+                <p className="text-sm text-gray-600">Selected: {selectedSizes.join(', ')}</p>
+              )}
+            </div>
+          )}
           
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">

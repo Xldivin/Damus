@@ -933,6 +933,7 @@ export const apiService = {
       specifications?: any
       features?: any[]
       tags?: any[]
+      c_sizes?: string[]
       meta_title?: string
       meta_description?: string
       is_active?: boolean
