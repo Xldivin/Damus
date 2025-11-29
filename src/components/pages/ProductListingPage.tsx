@@ -161,6 +161,7 @@ export function ProductListingPage() {
     // setSelectedBrands([])
     setSelectedCategories([])
     setMinRating(0)
+    setSearchQuery('') // Clear search query to show all products
   }
 
   const handleWishlistClick = async (e: any, productId: number | string) => {
