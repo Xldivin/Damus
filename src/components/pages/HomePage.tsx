@@ -124,6 +124,9 @@ export function HomePage() {
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-white">
               Elevate Your Everyday Style
             </h1>
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 sm:mb-6 text-red-500">
+  Get 30% off
+</h1>
             <p className="text-lg sm:text-xl text-gray-100 mb-6 sm:mb-8">
               Curated fashion with simple, timeless design.
             </p>
