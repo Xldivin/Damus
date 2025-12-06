@@ -17,6 +17,8 @@ export function ProductDetailPage() {
   const { addToCart, toggleWishlist, wishlistItems, setSelectedProduct, isLoggedIn, openCart } = useAppContext()
   
   const [product, setProduct] = useState<any>(null)
+  const [variants, setVariants] = useState<any[]>([])
+  const [selectedVariant, setSelectedVariant] = useState<any>(null)
   const [relatedProducts, setRelatedProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,9 +42,27 @@ export function ProductDetailPage() {
         setLoading(true)
         setError(null)
         
-        const productData = await apiService.products.getProductById(id)
+        // Get product with variants - use direct API call to get full response structure
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+        const response = await fetch(`${apiUrl}/api/products/${id}`)
+        const jsonResponse = await response.json()
+        
+        // Handle API response structure: { success, message, data: { product, variants, related_products } }
+        const productData = jsonResponse.data?.product || jsonResponse.product || jsonResponse
+        const variantsData = jsonResponse.data?.variants || jsonResponse.variants || []
+        const relatedData = jsonResponse.data?.related_products || []
+        
         setProduct(productData)
+        setVariants(variantsData)
+        setRelatedProducts(relatedData)
         setSelectedProduct(productData)
+        
+        // Set default variant (first one) if variants exist
+        if (variantsData.length > 0) {
+          setSelectedVariant(variantsData[0])
+          setSelectedImageIndex(0)
+        }
+        
         // Check wishlist status for this product (auth vs session)
         try {
           const status = await apiService.wishlist.check(productData.id)
@@ -50,10 +70,6 @@ export function ProductDetailPage() {
         } catch {
           setInWishlist(false)
         }
-        
-        // Load related products
-        const related = await apiService.products.getRelatedProducts(id)
-        setRelatedProducts(related)
 
         // Load reviews
         try {
@@ -203,12 +219,34 @@ export function ProductDetailPage() {
     }
   }
 
+  // Get current images (variant images or product images)
+  const getCurrentImages = () => {
+    if (selectedVariant && selectedVariant.images && selectedVariant.images.length > 0) {
+      return selectedVariant.images
+    }
+    return product?.images || []
+  }
+
+  const currentImages = getCurrentImages()
+
   const nextImage = () => {
-    setSelectedImageIndex(prev => (prev + 1) % product.images.length)
+    if (currentImages.length > 0) {
+      setSelectedImageIndex(prev => (prev + 1) % currentImages.length)
+    }
   }
 
   const prevImage = () => {
-    setSelectedImageIndex(prev => (prev - 1 + product.images.length) % product.images.length)
+    if (currentImages.length > 0) {
+      setSelectedImageIndex(prev => (prev - 1 + currentImages.length) % currentImages.length)
+    }
+  }
+
+  // Handle variant selection
+  const handleVariantSelect = (variant: any) => {
+    setSelectedVariant(variant)
+    setSelectedImageIndex(0) // Reset to first image when variant changes
+    // Reset size selection when variant changes
+    setSelectedSize('')
   }
 
   return (
@@ -243,7 +281,7 @@ export function ProductDetailPage() {
         <div className="space-y-4">
           <div className="overflow-hidden rounded-lg border relative">
             <ImageWithFallback
-              src={product.images?.[selectedImageIndex]?.image_url || product.primary_image}
+              src={currentImages[selectedImageIndex]?.image_url || selectedVariant?.primary_image || product.primary_image}
               alt={product.name}
               className="w-full h-full object-cover"
               width={600}
@@ -251,17 +289,19 @@ export function ProductDetailPage() {
               quality={90}
               lazy={false}
             />
-            {product.images && product.images.length > 1 && (
+            {currentImages.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 z-10"
+                  aria-label="Previous image"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 z-10"
+                  aria-label="Next image"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -270,15 +310,16 @@ export function ProductDetailPage() {
           </div>
           
           {/* Thumbnail images */}
-          {product.images && product.images.length > 1 && (
+          {currentImages.length > 1 && (
             <div className="flex space-x-2">
-              {product.images.map((image:any, index:any) => (
+              {currentImages.map((image:any, index:any) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImageIndex(index)}
                   className={`w-20 h-20 overflow-hidden rounded-lg border-2 ${
                     selectedImageIndex === index ? 'border-black' : 'border-gray-200'
                   }`}
+                  aria-label={`View image ${index + 1}`}
                 >
                   <ImageWithFallback
                     src={image.image_url}
@@ -314,34 +355,97 @@ export function ProductDetailPage() {
             </div>
           </div>
 
+          {/* Color Variants - Color Swatches */}
+          {variants.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                Select Color
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {variants.map((variant: any) => {
+                  const isSelected = selectedVariant?.id === variant.id
+                  const isAvailable = variant.in_stock
+                  
+                  return (
+                    <button
+                      key={variant.id}
+                      onClick={() => isAvailable && handleVariantSelect(variant)}
+                      disabled={!isAvailable}
+                      className={`
+                        relative w-12 h-12 rounded-full border-2 transition-all
+                        ${isSelected 
+                          ? 'border-black ring-2 ring-black ring-offset-2 scale-110' 
+                          : isAvailable
+                            ? 'border-gray-300 hover:border-gray-500 hover:scale-105'
+                            : 'border-gray-200 opacity-50 cursor-not-allowed'
+                        }
+                        focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2
+                      `}
+                      style={{
+                        backgroundColor: variant.hex || '#cccccc',
+                      }}
+                      aria-label={`Select ${variant.color} color variant`}
+                      title={`${variant.color}${!isAvailable ? ' - Out of Stock' : ''}`}
+                    >
+                      {!isAvailable && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className="w-full h-px bg-gray-400 rotate-45 transform"></span>
+                        </span>
+                      )}
+                      {isSelected && (
+                        <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-black rounded-full border-2 border-white flex items-center justify-center">
+                          <span className="w-2 h-2 bg-white rounded-full"></span>
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {selectedVariant && (
+                <p className="text-sm text-gray-600">
+                  Selected: <span className="font-medium">{selectedVariant.color}</span>
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Price */}
           <div className="space-y-2">
             <div className="flex items-center space-x-3">
-              <span className="text-3xl font-bold">AED {product.effective_price}</span>
+              <span className="text-3xl font-bold">
+                AED {selectedVariant?.effective_price || product.effective_price}
+              </span>
               {product.original_price && (
                 <>
                   <span className="text-xl text-gray-500 line-through">
                     AED {product.original_price}
                   </span>
                   <Badge className="bg-red-100 text-red-800">
-                    Save AED {product.original_price - product.effective_price}
+                    Save AED {product.original_price - (selectedVariant?.effective_price || product.effective_price)}
                   </Badge>
                 </>
               )}
             </div>
             {product.original_price && (
               <p className="text-sm text-gray-600">
-                {Math.round(((product.original_price - product.effective_price) / product.original_price) * 100)}% off
+                {Math.round(((product.original_price - (selectedVariant?.effective_price || product.effective_price)) / product.original_price) * 100)}% off
               </p>
             )}
           </div>
 
           {/* Stock status */}
           <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${product.in_stock ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className={product.in_stock ? 'text-green-600' : 'text-red-600'}>
-              {product.in_stock ? 'In Stock' : 'Out of Stock'}
+            <div className={`w-3 h-3 rounded-full ${
+              (selectedVariant?.in_stock ?? product.in_stock) ? 'bg-green-500' : 'bg-red-500'
+            }`} />
+            <span className={(selectedVariant?.in_stock ?? product.in_stock) ? 'text-green-600' : 'text-red-600'}>
+              {(selectedVariant?.in_stock ?? product.in_stock) ? 'In Stock' : 'Out of Stock'}
             </span>
+            {selectedVariant && selectedVariant.stock_quantity !== undefined && (
+              <span className="text-sm text-gray-500">
+                ({selectedVariant.stock_quantity} available)
+              </span>
+            )}
           </div>
 
           {/* Size Selection - Only show if product has sizes */}
@@ -416,7 +520,10 @@ export function ProductDetailPage() {
               <Button
                 size="lg"
                 className="flex-1 bg-black text-white hover:bg-gray-800"
-                disabled={!product.in_stock || (product.sizes || product.c_sizes || product.available_sizes ? !selectedSize : false)}
+                disabled={
+                  !(selectedVariant?.in_stock ?? product.in_stock) || 
+                  (product.sizes || product.c_sizes || product.available_sizes ? !selectedSize : false)
+                }
                 onClick={handleAddToCart}
               >
                 <ShoppingCart className="h-5 w-5 mr-2" />

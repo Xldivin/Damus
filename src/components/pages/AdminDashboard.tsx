@@ -212,6 +212,16 @@ export function AdminDashboard() {
   }>>([])
   const [uploadingImages, setUploadingImages] = useState(false)
   
+  // Product variants state
+  const [variants, setVariants] = useState<Array<{
+    color: string
+    color_hex: string
+    stock_quantity: number
+    sku: string
+    price_adjustment: number
+    images: Array<{ url: string; alt_text: string; is_primary: boolean; preview?: string }>
+  }>>([])
+  
   // Load products when products tab is active
   useEffect(() => {
     const loadProducts = async () => {
@@ -289,8 +299,15 @@ export function AdminDashboard() {
           URL.revokeObjectURL(img.preview)
         }
       })
+      variants.forEach(variant => {
+        variant.images.forEach(img => {
+          if (img.preview) {
+            URL.revokeObjectURL(img.preview)
+          }
+        })
+      })
     }
-  }, [productImages])
+  }, [productImages, variants])
   
   // Handle modal actions
   const handleViewProduct = async (product: any) => {
@@ -636,6 +653,21 @@ export function AdminDashboard() {
         return
       }
       
+      // Validate variants if any are added
+      if (variants.length > 0) {
+        for (let i = 0; i < variants.length; i++) {
+          const variant = variants[i]
+          if (!variant.color || !variant.color_hex) {
+            toast.error(`Variant ${i + 1}: Color name and HEX code are required`)
+            return
+          }
+          if (variant.stock_quantity < 0) {
+            toast.error(`Variant ${i + 1}: Stock quantity must be 0 or greater`)
+            return
+          }
+        }
+      }
+      
       // Find or create category
       let categoryId: number
       const existingCategory = categories.find(c => c.name.toLowerCase() === categoryInput.toLowerCase())
@@ -676,6 +708,19 @@ export function AdminDashboard() {
           alt_text: img.alt_text || newProductForm.name,
           is_primary: img.is_primary,
         })) : undefined,
+        // Include variants in the payload
+        variants: variants.length > 0 ? variants.map(v => ({
+          color: v.color,
+          color_hex: v.color_hex,
+          stock_quantity: v.stock_quantity,
+          sku: v.sku || undefined,
+          price_adjustment: v.price_adjustment,
+          images: v.images.map(img => ({
+            url: img.url,
+            alt_text: img.alt_text,
+            is_primary: img.is_primary,
+          }))
+        })) : undefined,
       }
       
       await apiService.adminProducts.create(productData)
@@ -711,6 +756,18 @@ export function AdminDashboard() {
       })
       setProductImages([])
       
+      // Clean up variant image previews
+      variants.forEach(variant => {
+        variant.images.forEach(img => {
+          if (img.preview) {
+            URL.revokeObjectURL(img.preview)
+          }
+        })
+      })
+      
+      // Reset variants
+      setVariants([])
+      
       // Reload products
       const productsResponse = await apiService.adminProducts.getAll({ include_inactive: true, per_page: 100 })
       setProducts(productsResponse.data || [])
@@ -720,6 +777,90 @@ export function AdminDashboard() {
     } finally {
       setIsSubmittingProduct(false)
     }
+  }
+  
+  // Variant helper functions
+  const addVariant = () => {
+    setVariants([...variants, {
+      color: '',
+      color_hex: '#000000',
+      stock_quantity: 0,
+      sku: '',
+      price_adjustment: 0,
+      images: []
+    }])
+  }
+
+  const updateVariant = (index: number, field: string, value: any) => {
+    const updated = [...variants]
+    updated[index] = { ...updated[index], [field]: value }
+    setVariants(updated)
+  }
+
+  const removeVariant = (index: number) => {
+    setVariants(variants.filter((_, i) => i !== index))
+  }
+
+  const addVariantImage = async (variantIndex: number, files: File[]) => {
+    if (files.length === 0) return
+    
+    const updated = [...variants]
+    const variant = updated[variantIndex]
+    const existingImageCount = variant.images.length
+    
+    setUploadingImages(true)
+    try {
+      const uploadPromises = files.map(async (file, fileIndex) => {
+        // Create preview
+        const preview = URL.createObjectURL(file)
+        
+        // Upload to server
+        const uploadedFile = await apiService.adminMedia.upload(file, 'products/variants', 'variant_image')
+        
+        return {
+          url: uploadedFile.secure_url || uploadedFile.url,
+          alt_text: `${newProductForm.name} - ${variant.color || 'Variant'}`,
+          is_primary: existingImageCount === 0 && fileIndex === 0, // First image of first batch is primary
+          preview,
+        }
+      })
+      
+      const uploadedImages = await Promise.all(uploadPromises)
+      updated[variantIndex].images = [...variant.images, ...uploadedImages]
+      setVariants(updated)
+      toast.success(`${uploadedImages.length} variant image(s) uploaded successfully`)
+    } catch (error: any) {
+      console.error('Failed to upload variant images:', error)
+      toast.error(error?.message || 'Failed to upload variant images')
+    } finally {
+      setUploadingImages(false)
+    }
+  }
+
+  const removeVariantImage = (variantIndex: number, imageIndex: number) => {
+    const updated = [...variants]
+    const imageToRemove = updated[variantIndex].images[imageIndex]
+    
+    // Revoke preview URL if it exists
+    if (imageToRemove.preview) {
+      URL.revokeObjectURL(imageToRemove.preview)
+    }
+    
+    updated[variantIndex].images.splice(imageIndex, 1)
+    // Set first image as primary if needed
+    if (updated[variantIndex].images.length > 0) {
+      updated[variantIndex].images[0].is_primary = true
+    }
+    setVariants(updated)
+  }
+
+  const updateVariantImage = (variantIndex: number, imageIndex: number, field: string, value: any) => {
+    const updated = [...variants]
+    updated[variantIndex].images[imageIndex] = {
+      ...updated[variantIndex].images[imageIndex],
+      [field]: value
+    }
+    setVariants(updated)
   }
   
   
@@ -1981,6 +2122,217 @@ return (
               </div>
             </div>
           )}
+
+          {/* Variants Section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Label className="text-base font-semibold">Color Variants</Label>
+              <Button 
+                type="button" 
+                onClick={addVariant}
+                variant="outline"
+                size="sm"
+                disabled={isSubmittingProduct || uploadingImages}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Variant
+              </Button>
+            </div>
+
+            {variants.length === 0 && (
+              <p className="text-sm text-gray-500">
+                No variants added. Click "Add Variant" to create color variants for this product.
+              </p>
+            )}
+
+            {variants.map((variant, variantIndex) => (
+              <div key={variantIndex} className="border rounded-lg p-4 space-y-4 bg-gray-50">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-medium">Variant {variantIndex + 1}</h4>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeVariant(variantIndex)}
+                    className="text-red-600 hover:text-red-700"
+                    disabled={isSubmittingProduct || uploadingImages}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Color Name */}
+                  <div>
+                    <Label htmlFor={`variant-color-${variantIndex}`}>Color Name *</Label>
+                    <Input
+                      id={`variant-color-${variantIndex}`}
+                      value={variant.color}
+                      onChange={(e) => updateVariant(variantIndex, 'color', e.target.value)}
+                      placeholder="e.g., Black, Red, Blue"
+                      required
+                      disabled={isSubmittingProduct || uploadingImages}
+                    />
+                  </div>
+
+                  {/* Color HEX */}
+                  <div>
+                    <Label htmlFor={`variant-hex-${variantIndex}`}>Color HEX Code</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        value={variant.color_hex}
+                        onChange={(e) => updateVariant(variantIndex, 'color_hex', e.target.value)}
+                        className="w-16 h-10 p-1 cursor-pointer"
+                        disabled={isSubmittingProduct || uploadingImages}
+                      />
+                      <Input
+                        id={`variant-hex-${variantIndex}`}
+                        value={variant.color_hex}
+                        onChange={(e) => updateVariant(variantIndex, 'color_hex', e.target.value)}
+                        placeholder="#000000"
+                        pattern="^#[0-9A-Fa-f]{6}$"
+                        className="flex-1"
+                        disabled={isSubmittingProduct || uploadingImages}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stock Quantity */}
+                  <div>
+                    <Label htmlFor={`variant-stock-${variantIndex}`}>Stock Quantity *</Label>
+                    <Input
+                      id={`variant-stock-${variantIndex}`}
+                      type="number"
+                      value={variant.stock_quantity}
+                      onChange={(e) => updateVariant(variantIndex, 'stock_quantity', parseInt(e.target.value) || 0)}
+                      min="0"
+                      required
+                      disabled={isSubmittingProduct || uploadingImages}
+                    />
+                  </div>
+
+                  {/* SKU */}
+                  <div>
+                    <Label htmlFor={`variant-sku-${variantIndex}`}>SKU (optional)</Label>
+                    <Input
+                      id={`variant-sku-${variantIndex}`}
+                      value={variant.sku}
+                      onChange={(e) => updateVariant(variantIndex, 'sku', e.target.value)}
+                      placeholder="Auto-generated if empty"
+                      disabled={isSubmittingProduct || uploadingImages}
+                    />
+                  </div>
+
+                  {/* Price Adjustment */}
+                  <div className="col-span-2">
+                    <Label htmlFor={`variant-price-adj-${variantIndex}`}>Price Adjustment</Label>
+                    <Input
+                      id={`variant-price-adj-${variantIndex}`}
+                      type="number"
+                      step="0.01"
+                      value={variant.price_adjustment}
+                      onChange={(e) => updateVariant(variantIndex, 'price_adjustment', parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      disabled={isSubmittingProduct || uploadingImages}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Add/subtract from base price (e.g., +5.00 or -2.00)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Variant Images */}
+                <div className="space-y-2">
+                  <Label>Variant Images</Label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                    <input
+                      type="file"
+                      id={`variant-images-${variantIndex}`}
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || [])
+                        if (files.length === 0) return
+                        
+                        await addVariantImage(variantIndex, files)
+                        // Reset input
+                        e.target.value = ''
+                      }}
+                      disabled={uploadingImages || isSubmittingProduct}
+                    />
+                    <label
+                      htmlFor={`variant-images-${variantIndex}`}
+                      className={`flex flex-col items-center justify-center cursor-pointer ${uploadingImages || isSubmittingProduct ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <Plus className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">
+                        {uploadingImages ? 'Uploading...' : 'Click to upload variant images or drag and drop'}
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</span>
+                    </label>
+                    
+                    {/* Image Preview Grid */}
+                    {variant.images.length > 0 && (
+                      <div className="mt-4 grid grid-cols-4 gap-2">
+                        {variant.images.map((img, imgIndex) => (
+                          <div key={imgIndex} className="relative group">
+                            <img
+                              src={img.preview || img.url}
+                              alt={img.alt_text || `Variant image ${imgIndex + 1}`}
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeVariantImage(variantIndex, imgIndex)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              disabled={isSubmittingProduct || uploadingImages}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                            {img.is_primary && (
+                              <div className="absolute bottom-1 left-1 bg-black text-white text-xs px-1 rounded">
+                                Primary
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = [...variants]
+                                updated[variantIndex].images[imgIndex].is_primary = true
+                                updated[variantIndex].images.forEach((im, idx) => {
+                                  if (idx !== imgIndex) im.is_primary = false
+                                })
+                                setVariants(updated)
+                              }}
+                              className={`absolute top-1 left-1 text-xs px-1 rounded ${
+                                img.is_primary 
+                                  ? 'bg-black text-white' 
+                                  : 'bg-white text-black opacity-0 group-hover:opacity-100'
+                              } transition-opacity`}
+                              disabled={isSubmittingProduct || uploadingImages || img.is_primary}
+                            >
+                              {img.is_primary ? 'Primary' : 'Set Primary'}
+                            </button>
+                            <div className="mt-1">
+                              <Input
+                                value={img.alt_text}
+                                onChange={(e) => updateVariantImage(variantIndex, imgIndex, 'alt_text', e.target.value)}
+                                placeholder="Alt text"
+                                className="text-xs h-7"
+                                disabled={isSubmittingProduct || uploadingImages}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
           
           <div className="flex justify-end space-x-2 pt-4">
             <Button 
