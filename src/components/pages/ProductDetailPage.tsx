@@ -43,7 +43,7 @@ export function ProductDetailPage() {
         setError(null)
         
         // Get product with variants - use direct API call to get full response structure
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://damus-be-test.onrender.com'
         const response = await fetch(`${apiUrl}/api/products/${id}`)
         const jsonResponse = await response.json()
         

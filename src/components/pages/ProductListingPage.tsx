@@ -18,7 +18,7 @@ import { apiService } from '../../services/api'
 export function ProductListingPage() {
   const navigate = useNavigate()
   const { setSelectedProduct, addToCart, toggleWishlist, wishlistItems, isLoggedIn } = useAppContext()
-  
+
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState('featured')
   const [maxPrice, setMaxPrice] = useState(10000) // Default max price, will be calculated from products
@@ -32,7 +32,7 @@ export function ProductListingPage() {
   const [showCategoriesPanel, setShowCategoriesPanel] = useState(false)
   const [showRatingPanel, setShowRatingPanel] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  
+
   // API state
   const [products, setProducts] = useState<any[]>([])
   // const [brands, setBrands] = useState<string[]>([])
@@ -47,7 +47,7 @@ export function ProductListingPage() {
       try {
         setLoading(true)
         setError(null)
-        
+
         const [productsData, categoriesData] = await Promise.all([
           apiService.products.getAllProducts(true), // Include inactive products to get all products
           apiService.categories.getAllCategories()
@@ -64,12 +64,12 @@ export function ProductListingPage() {
         } catch {
           // ignore wishlist check errors gracefully
         }
-        
+
         // Filter to only show active products (even if we fetched all)
         const activeProducts = productsData.filter((p: any) => p.is_active !== false)
         setProducts(activeProducts)
         setCategories(categoriesData.map(cat => cat.name))
-        
+
         // Calculate max price from active products and update price range
         if (activeProducts.length > 0) {
           const calculatedMaxPrice = Math.max(...activeProducts.map((p: any) => p.effective_price || p.price || 0))
@@ -77,7 +77,7 @@ export function ProductListingPage() {
           setMaxPrice(Math.max(roundedMaxPrice, 1000)) // At least 1000
           setPriceRange([0, Math.max(roundedMaxPrice, 1000)]) // Reset to show all products
         }
-        
+
         // Extract unique brands from products
         // const uniqueBrands = [...new Set(productsData.map(p => p.brand?.name).filter(Boolean))]
         // setBrands(uniqueBrands)
@@ -100,7 +100,7 @@ export function ProductListingPage() {
       if (category) {
         setSelectedCategories([category])
       }
-    } catch {}
+    } catch { }
   }, [location.search])
 
   const filteredProducts = products.filter(product => {
@@ -108,11 +108,11 @@ export function ProductListingPage() {
     // const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(product.brand?.name)
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category?.name)
     const matchesRating = product.average_rating >= minRating
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       // product.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     return matchesPrice && /* matchesBrand && */ matchesCategory && matchesRating && matchesSearch
   })
 
@@ -174,17 +174,17 @@ export function ProductListingPage() {
     setSelectedCategories([])
     setMinRating(0)
     setSearchQuery('') // Clear search query to show all products
-    
+
     // Clear URL query parameters
     navigate('/products', { replace: true })
-    
+
     // Reload products to ensure we have all active products
     try {
       setLoading(true)
       const productsData = await apiService.products.getAllProducts(true)
       const activeProducts = productsData.filter((p: any) => p.is_active !== false)
       setProducts(activeProducts)
-      
+
       // Recalculate max price
       if (activeProducts.length > 0) {
         const calculatedMaxPrice = Math.max(...activeProducts.map((p: any) => p.effective_price || p.price || 0))
@@ -201,11 +201,11 @@ export function ProductListingPage() {
 
   const handleWishlistClick = async (e: any, productId: number | string) => {
     e.stopPropagation()
-    
+
     // Find the product to check its current wishlist status
     const product = products.find(p => p.id === productId)
     const isInWishlist = product?.__in_wishlist || wishlistItems.includes(String(productId))
-    
+
     try {
       if (isInWishlist) {
         // Remove from wishlist
@@ -352,21 +352,27 @@ export function ProductListingPage() {
             <p className="text-gray-600 mt-1">Discover our complete collection of premium technology and electronics</p>
           </div>
         </div>
-        
+
         {/* Search Bar */}
+
         <div className="mt-4">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none"
+            />
+
             <Input
               type="text"
               placeholder="Search products, categories..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-black focus:border-black"
+                className="relative z-10 pl-18"
             />
           </div>
         </div>
-        
+
+
+
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mt-4">
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">{sortedProducts.length} products found</span>
@@ -482,7 +488,7 @@ export function ProductListingPage() {
           {showRatingPanel && (
             <div className="mt-3 border border-black rounded-md p-4 max-w-sm">
               <div className="space-y-2">
-                {[4,3,2,1].map(rating => (
+                {[4, 3, 2, 1].map(rating => (
                   <button
                     key={`min-${rating}`}
                     className={`w-full text-left px-3 py-2 border rounded-md ${minRating === rating ? 'border-black' : 'border-gray-200'} hover:bg-gray-50`}
@@ -503,27 +509,27 @@ export function ProductListingPage() {
       </div>
 
       {/* Filters - Mobile */}
-        {showFilters && (
-          <div className="lg:hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">
-                Filters
-              </h2>
-              <Button variant="ghost" onClick={() => setShowFilters(false)}>
-                ✕
-              </Button>
-            </div>
-            <FilterSidebar />
-            <div className="mt-6 space-y-3">
-              <Button 
-                className="w-full bg-black text-white"
-                onClick={() => setShowFilters(false)}
-              >
-                Apply Filters
-              </Button>
-            </div>
+      {showFilters && (
+        <div className="lg:hidden fixed inset-0 bg-white z-50 p-4 overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">
+              Filters
+            </h2>
+            <Button variant="ghost" onClick={() => setShowFilters(false)}>
+              ✕
+            </Button>
           </div>
-        )}
+          <FilterSidebar />
+          <div className="mt-6 space-y-3">
+            <Button
+              className="w-full bg-black text-white"
+              onClick={() => setShowFilters(false)}
+            >
+              Apply Filters
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Products */}
       <div className="mt-6">
@@ -544,187 +550,187 @@ export function ProductListingPage() {
             ))}
           </div>
         ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {sortedProducts.map((product, index) => (
-                <Card 
-                  key={`product-${product.id || index}`} 
-                  className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200 relative"
-                >
-                  <CardContent className="p-0">
-                    <div className="h-80 overflow-hidden rounded-t-lg relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {sortedProducts.map((product, index) => (
+              <Card
+                key={`product-${product.id || index}`}
+                className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200 relative"
+              >
+                <CardContent className="p-0">
+                  <div className="h-80 overflow-hidden rounded-t-lg relative">
+                    <ImageWithFallback
+                      src={product.primary_image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      width={400}
+                      height={320}
+                      quality={85}
+                      lazy={true}
+                    />
+                    {product.originalPrice && (
+                      <Badge className="absolute top-2 left-2 bg-black text-white">
+                        AED {product.original_price - product.effective_price} OFF
+                      </Badge>
+                    )}
+                    {!product.in_stock && (
+                      <Badge className="absolute top-2 left-2 bg-red-500 text-white">
+                        Out of Stock
+                      </Badge>
+                    )}
+                    <button
+                      onClick={(e) => handleWishlistClick(e, product.id)}
+                      className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                    >
+                      <svg
+                        className={`h-4 w-4 ${product.__in_wishlist || wishlistItems.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="p-4 flex flex-col flex-grow">
+                    <div onClick={() => handleProductClick(product)} className="cursor-pointer flex-grow flex flex-col">
+                      {/* <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p> */}
+                      <h3 className="font-semibold mb-2 line-clamp-2 min-h-[3rem]">
+                        {product.name}
+                      </h3>
+
+                      <div className="flex items-center justify-between mb-3 mt-auto">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-bold text-lg">AED {product.effective_price}</span>
+                          {product.original_price && (
+                            <span className="text-gray-500 line-through text-sm">AED {product.original_price}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Add Component - Show on hover */}
+                    <div className="mt-4 border-t pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
+                      <QuickAdd
+                        product={product}
+                        onAddToCart={(product, size) => {
+                          console.log(`Added ${product.name} in size ${size} to cart`)
+                        }}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sortedProducts.map((product, index) => (
+              <Card
+                key={`product-list-${product.id || index}`}
+                className="cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200"
+                onClick={() => handleProductClick(product)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex space-x-6">
+                    <div className="w-48 h-48 flex-shrink-0 overflow-hidden rounded-lg relative">
                       <ImageWithFallback
                         src={product.primary_image}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        width={400}
-                        height={320}
-                        quality={85}
-                        lazy={true}
+                        className="w-full h-full object-cover"
                       />
                       {product.originalPrice && (
                         <Badge className="absolute top-2 left-2 bg-black text-white">
                           AED {product.original_price - product.effective_price} OFF
                         </Badge>
                       )}
-                      {!product.in_stock && (
-                        <Badge className="absolute top-2 left-2 bg-red-500 text-white">
-                          Out of Stock
-                        </Badge>
-                      )}
-                      <button
-                        onClick={(e) => handleWishlistClick(e, product.id)}
-                        className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                      >
-                        <svg
-                          className={`h-4 w-4 ${product.__in_wishlist || wishlistItems.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                        </svg>
-                      </button>
                     </div>
-                    <div className="p-4 flex flex-col flex-grow">
-                      <div onClick={() => handleProductClick(product)} className="cursor-pointer flex-grow flex flex-col">
-                        {/* <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p> */}
-                        <h3 className="font-semibold mb-2 line-clamp-2 min-h-[3rem]">
-                          {product.name}
-                        </h3>
-
-                        <div className="flex items-center justify-between mb-3 mt-auto">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-bold text-lg">AED {product.effective_price}</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          {/* <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p> */}
+                          <h3 className="text-xl font-semibold mb-2">
+                            {product.name}
+                          </h3>
+                          <div className="flex items-center mb-3">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${i < Math.floor(product.average_rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-600 ml-2">
+                              ({product.total_reviews} reviews)
+                            </span>
+                          </div>
+                          <p className="text-gray-600 mb-4">{product.description}</p>
+                          <div className="flex items-center space-x-2 mb-4">
+                            <span className="font-bold text-2xl">AED {product.effective_price}</span>
                             {product.original_price && (
-                              <span className="text-gray-500 line-through text-sm">AED {product.original_price}</span>
+                              <span className="text-gray-500 line-through text-lg">AED {product.original_price}</span>
                             )}
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* Quick Add Component - Show on hover */}
-                      <div className="mt-4 border-t pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
-                        <QuickAdd 
-                          product={product}
-                          onAddToCart={(product, size) => {
-                            console.log(`Added ${product.name} in size ${size} to cart`)
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {sortedProducts.map((product, index) => (
-                <Card 
-                  key={`product-list-${product.id || index}`} 
-                  className="cursor-pointer hover:shadow-lg transition-all duration-300 border-gray-200"
-                  onClick={() => handleProductClick(product)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex space-x-6">
-                      <div className="w-48 h-48 flex-shrink-0 overflow-hidden rounded-lg relative">
-                        <ImageWithFallback
-                          src={product.primary_image}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                        {product.originalPrice && (
-                        <Badge className="absolute top-2 left-2 bg-black text-white">
-                          AED {product.original_price - product.effective_price} OFF
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            {/* <p className="text-sm text-gray-600 mb-1">{product.brand?.name}</p> */}
-                            <h3 className="text-xl font-semibold mb-2">
-                              {product.name}
-                            </h3>
-                            <div className="flex items-center mb-3">
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`h-4 w-4 ${i < Math.floor(product.average_rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-sm text-gray-600 ml-2">
-                                ({product.total_reviews} reviews)
-                              </span>
-                            </div>
-                            <p className="text-gray-600 mb-4">{product.description}</p>
-                            <div className="flex items-center space-x-2 mb-4">
-                              <span className="font-bold text-2xl">AED {product.effective_price}</span>
-                              {product.original_price && (
-                                <span className="text-gray-500 line-through text-lg">AED {product.original_price}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex flex-col space-y-2 ml-6">
-                            <button
-                              onClick={(e) => handleWishlistClick(e, product.id)}
-                              className="p-2 border rounded-lg hover:bg-gray-100 transition-colors"
+                        <div className="flex flex-col space-y-2 ml-6">
+                          <button
+                            onClick={(e) => handleWishlistClick(e, product.id)}
+                            className="p-2 border rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <svg
+                              className={`h-5 w-5 ${product.__in_wishlist || wishlistItems.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
                             >
-                              <svg
-                                className={`h-5 w-5 ${product.__in_wishlist || wishlistItems.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                            <Button 
-                              className="bg-black text-white hover:bg-gray-800"
-                              disabled={!product.in_stock}
-                              onClick={(e:any) => handleAddToCartApi(e, product)}
-                            >
-                              {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
-                            </Button>
-                          </div>
+                              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          <Button
+                            className="bg-black text-white hover:bg-gray-800"
+                            disabled={!product.in_stock}
+                            onClick={(e: any) => handleAddToCartApi(e, product)}
+                          >
+                            {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                          </Button>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-          {!loading && sortedProducts.length === 0 && !error && (
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold mb-2" >
-                No products found
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Try adjusting your filters or search criteria
-              </p>
-              <Button onClick={clearFilters} className="bg-black text-white">
-                Clear Filters
-              </Button>
-            </div>
-          )}
+        {!loading && sortedProducts.length === 0 && !error && (
+          <div className="text-center py-12">
+            <h3 className="text-xl font-semibold mb-2" >
+              No products found
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Try adjusting your filters or search criteria
+            </p>
+            <Button onClick={clearFilters} className="bg-black text-white">
+              Clear Filters
+            </Button>
+          </div>
+        )}
 
-          {error && (
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold mb-2" >
-                Failed to load products
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {error}
-              </p>
-              <Button 
-                onClick={() => window.location.reload()} 
-                className="bg-black text-white"
-              >
-                Try Again
-              </Button>
-            </div>
-          )}
+        {error && (
+          <div className="text-center py-12">
+            <h3 className="text-xl font-semibold mb-2" >
+              Failed to load products
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {error}
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-black text-white"
+            >
+              Try Again
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
